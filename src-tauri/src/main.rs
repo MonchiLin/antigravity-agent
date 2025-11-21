@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::Manager;
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -181,6 +183,16 @@ fn main() {
                 log_dir.join("antigravity-agent.log"),
                 LevelFilter::Info,
             ).ok();
+            
+            // 在 release 模式下禁用右键菜单
+            #[cfg(not(debug_assertions))]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    // Tauri 2.x 中禁用上下文菜单需要通过eval执行JavaScript
+                    let _ = window.eval("window.addEventListener('contextmenu', e => e.preventDefault());");
+                }
+            }
+            
             // 初始化窗口事件处理器
             if let Err(e) = window_event_handler::init_window_event_handler(app) {
                 eprintln!("⚠️  窗口事件处理器初始化失败: {}", e);

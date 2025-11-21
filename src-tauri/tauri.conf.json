@@ -64,7 +64,8 @@
         "fullscreen": false,
         "center": true,
         "closable": true,
-        "skipTaskbar": false
+        "skipTaskbar": false,
+        "additionalBrowserArgs": "--disable-features=msWebView2BrowserHitTransparent"
       }
     ],
     "security": {
