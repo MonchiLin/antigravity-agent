@@ -66,16 +66,26 @@ jobs:
           cache-targets: true
           shared-key: tauri-${{ matrix.platform }}
 
-      - name: Sync node version and setup cache
+      - name: Sync node version
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
     
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{ github.workspace }}/src-tauri/target
+          key: ${{ runner.os }}-rust-${{ matrix.platform }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-${{ matrix.platform }}-
+            ${{ runner.os }}-rust-
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
