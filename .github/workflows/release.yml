@@ -21,7 +21,7 @@ jobs:
         include:
           - platform: macos-latest
             arch: aarch64
-            runs-on: macos-14
+            runs-on: macos-13
             target: aarch64-apple-darwin
           - platform: macos-13
             arch: x86_64
@@ -71,31 +71,22 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
-      - name: Cache Vite build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/vite
-          key: ${{ runner.os }}-node-vite-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-vite-
-
+    
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Cache Tauri resources
+      - name: Cache Rust build
         uses: actions/cache@v4
         with:
           path: |
+            ~/.cargo/registry
+            ~/.cargo/git
             ${{ github.workspace }}/src-tauri/target
-            ~/.cache/tauri
-          key: ${{ runner.os }}-tauri-${{ hashFiles('**/Cargo.lock', '**/package-lock.json') }}-${{ matrix.platform }}
+          key: ${{ runner.os }}-rust-${{ matrix.platform }}-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-tauri-${{ hashFiles('**/Cargo.lock', '**/package-lock.json') }}-
-            ${{ runner.os }}-tauri-
+            ${{ runner.os }}-rust-${{ matrix.platform }}-
+            ${{ runner.os }}-rust-
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, FolderOpen, FileCode, Shield, Database, Zap, Monitor, Check, AlertCircle, Info, VolumeX } from 'lucide-react';
+import { Settings, FolderOpen, FileCode, Zap, Monitor, VolumeX, Check, AlertCircle, Info, X } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from '@tauri-apps/api/app';
 import { AntigravityPathService } from '../../services/antigravity-path-service';
 import {
   BaseDialog,
@@ -13,6 +14,7 @@ import { BaseButton } from '@/components/base-ui/BaseButton';
 import { BaseSpinner } from '@/components/base-ui/BaseSpinner';
 import { SystemTrayService } from '../../services/system-tray-service';
 import { SilentStartService } from '../../services/silent-start-service';
+import { cn } from '@/utils/utils';
 
 interface BusinessSettingsDialogProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+  const [appVersion, setAppVersion] = useState<string>('');
 
   // 监控设置状态
   const [isDbMonitoringEnabled, setIsDbMonitoringEnabled] = useState(true);
@@ -47,16 +50,23 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
       loadCurrentSettings();
       loadSystemTraySettings();
       loadSilentStartSettings();
+      loadAppVersion();
     }
   }, [isOpen]);
+
+  const loadAppVersion = async () => {
+    try {
+      const version = await getVersion();
+      setAppVersion(version);
+    } catch (error) {
+      console.error('获取版本号失败:', error);
+    }
+  };
 
   const loadCurrentPaths = async () => {
     setIsLoading(true);
     try {
-      // 获取用户自定义路径
       const paths = await AntigravityPathService.getCurrentPaths();
-
-      // 如果没有自定义路径，尝试获取自动检测的路径
       let finalDataPath = paths.dataPath;
       let finalExecPath = paths.executablePath;
 
@@ -88,12 +98,10 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
   const loadCurrentSettings = async () => {
     setIsSettingsLoading(true);
     try {
-      // 加载数据库监控状态
       const dbMonitoringEnabled = await invoke<boolean>('is_db_monitoring_enabled');
       setIsDbMonitoringEnabled(dbMonitoringEnabled);
     } catch (error) {
       console.error('加载设置失败:', error);
-      // 使用默认值
       setIsDbMonitoringEnabled(true);
     } finally {
       setIsSettingsLoading(false);
@@ -104,23 +112,18 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     try {
       const result = await invoke<string>('save_db_monitoring_state', { enabled });
       setIsDbMonitoringEnabled(enabled);
-      setMessage(`${result}`);
-      setMessageType('success');
-      setTimeout(() => setMessage(''), 3000);
+      showMessage(result, 'success');
     } catch (error) {
-      setMessage(`设置失败: ${error}`);
-      setMessageType('error');
+      showMessage(`设置失败: ${error}`, 'error');
     }
   };
 
   const loadSystemTraySettings = async () => {
     try {
-      // 加载系统托盘状态
       const trayEnabled = await SystemTrayService.getSystemTrayState();
       setIsSystemTrayEnabled(trayEnabled);
     } catch (error) {
       console.error('加载系统托盘设置失败:', error);
-      // 使用默认值
       setIsSystemTrayEnabled(false);
     }
   };
@@ -130,12 +133,9 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     try {
       const result = await SystemTrayService.toggleSystemTray();
       setIsSystemTrayEnabled(result.enabled);
-      setMessage(result.message);
-      setMessageType(result.enabled ? 'success' : 'info');
-      setTimeout(() => setMessage(''), 3000);
+      showMessage(result.message, result.enabled ? 'success' : 'info');
     } catch (error) {
-      setMessage(`系统托盘切换失败: ${error}`);
-      setMessageType('error');
+      showMessage(`系统托盘切换失败: ${error}`, 'error');
     } finally {
       setIsTrayLoading(false);
     }
@@ -143,12 +143,10 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
 
   const loadSilentStartSettings = async () => {
     try {
-      // 加载静默启动状态
       const silentStartEnabled = await SilentStartService.getSilentStartState();
       setIsSilentStartEnabled(silentStartEnabled);
     } catch (error) {
       console.error('加载静默启动设置失败:', error);
-      // 使用默认值
       setIsSilentStartEnabled(false);
     }
   };
@@ -158,12 +156,9 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     try {
       const result = await SilentStartService.setSilentStartEnabled(enabled);
       setIsSilentStartEnabled(result.enabled);
-      setMessage(result.message);
-      setMessageType(result.enabled ? 'success' : 'info');
-      setTimeout(() => setMessage(''), 3000);
+      showMessage(result.message, result.enabled ? 'success' : 'info');
     } catch (error) {
-      setMessage(`静默启动切换失败: ${error}`);
-      setMessageType('error');
+      showMessage(`静默启动切换失败: ${error}`, 'error');
     } finally {
       setIsSilentStartLoading(false);
     }
@@ -179,22 +174,16 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
 
       if (result && typeof result === 'string') {
         const valid = await AntigravityPathService.validatePath(result);
-
         if (valid) {
-          // 立即保存有效路径
           await AntigravityPathService.savePath(result);
           setDataPath(result);
-          setMessage('数据库路径已更新');
-          setMessageType('success');
-          setTimeout(() => setMessage(''), 2000);
+          showMessage('数据库路径已更新', 'success');
         } else {
-          setMessage('无效的数据目录：未找到 state.vscdb 文件');
-          setMessageType('warning');
+          showMessage('无效的数据目录：未找到 state.vscdb 文件', 'warning');
         }
       }
     } catch (error) {
-      setMessage(`选择失败: ${error}`);
-      setMessageType('error');
+      showMessage(`选择失败: ${error}`, 'error');
     }
   };
 
@@ -212,293 +201,153 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
 
       if (result && typeof result === 'string') {
         const valid = await AntigravityPathService.validateExecutable(result);
-
         if (valid) {
-          // 立即保存有效路径
           await AntigravityPathService.saveExecutable(result);
           setExecPath(result);
-          setMessage('可执行文件路径已更新');
-          setMessageType('success');
-          setTimeout(() => setMessage(''), 2000);
+          showMessage('可执行文件路径已更新', 'success');
         } else {
-          setMessage('无效的可执行文件');
-          setMessageType('warning');
+          showMessage('无效的可执行文件', 'warning');
         }
       }
     } catch (error) {
-      setMessage(`选择失败: ${error}`);
-      setMessageType('error');
+      showMessage(`选择失败: ${error}`, 'error');
     }
   };
 
-  const handleClose = () => {
-    // 重置状态
-    setMessage('');
-    onOpenChange(false);
+  const showMessage = (msg: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const getMessageIcon = () => {
     switch (messageType) {
-      case 'success':
-        return <Check className="h-4 w-4" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'info':
-      default:
-        return <Info className="h-4 w-4" />;
+      case 'success': return <Check className="h-3.5 w-3.5" />;
+      case 'error': return <AlertCircle className="h-3.5 w-3.5" />;
+      case 'warning': return <AlertCircle className="h-3.5 w-3.5" />;
+      default: return <Info className="h-3.5 w-3.5" />;
     }
   };
 
   const getMessageColorClasses = () => {
     switch (messageType) {
-      case 'success':
-        return 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200';
-      case 'error':
-        return 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200';
-      case 'warning':
-        return 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200';
-      case 'info':
-      default:
-        return 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200';
+      case 'success': return 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
+      case 'error': return 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+      case 'warning': return 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
+      default: return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
     }
   };
 
   return (
     <BaseDialog open={isOpen} onOpenChange={onOpenChange}>
-      <BaseDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-        <BaseDialogHeader className="px-6 pt-6 pb-2">
-          <BaseDialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Settings className="h-5 w-5 text-antigravity-blue" />
-            设置
+      <BaseDialogContent className="max-w-md p-0 overflow-hidden bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 shadow-2xl">
+        <BaseDialogHeader className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+          <BaseDialogTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Settings className="h-4 w-4 text-gray-500" />
+            <span>设置</span>
+            {appVersion && (
+              <span className="ml-1 text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-normal">
+                v{appVersion}
+              </span>
+            )}
           </BaseDialogTitle>
         </BaseDialogHeader>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <BaseSpinner size="lg" />
-            <p className="text-gray-500 dark:text-gray-400 mt-4 text-sm">正在加载设置...</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <BaseSpinner size="default" />
+            <p className="text-gray-400 mt-3 text-xs">加载中...</p>
           </div>
         ) : (
-          <div className="px-6 pb-6 space-y-5">
-            {/* 消息提示区域 */}
+          <div className="p-5 space-y-6">
+            {/* 消息提示 - 浮动式 */}
             {message && (
-              <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-300 ${getMessageColorClasses()}`}>
+              <div className={cn(
+                "absolute top-16 left-1/2 -translate-x-1/2 z-10",
+                "flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg border text-xs font-medium animate-in fade-in slide-in-from-top-2",
+                getMessageColorClasses()
+              )}>
                 {getMessageIcon()}
-                <p className="font-medium text-sm">{message}</p>
+                {message}
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {/* 数据库路径设置卡片 */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Database className="h-5 w-5 text-antigravity-blue dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">数据库路径</h3>
-                  </div>
-                </div>
+            {/* 路径设置组 */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">路径配置</h3>
 
-                <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">当前路径</div>
-                    <div className="text-xs font-mono text-gray-800 dark:text-gray-200 break-all">
+              <div className="space-y-3">
+                <div className="group">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 block px-1">数据库路径</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all transition-colors group-hover:border-gray-300 dark:group-hover:border-gray-700">
                       {dataPath}
                     </div>
-                  </div>
-
-                  <BaseButton
-                    variant="outline"
-                    onClick={handleBrowseDataPath}
-                    className="w-full justify-center gap-2 h-9"
-                    leftIcon={<FolderOpen className="h-4 w-4" />}
-                  >
-                    选择数据库路径
-                  </BaseButton>
-                </div>
-              </div>
-
-              {/* 可执行文件路径设置卡片 */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <FileCode className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">可执行文件</h3>
+                    <BaseButton
+                      variant="outline"
+                      size="icon"
+                      className="h-[34px] w-[34px] shrink-0 border-gray-200 dark:border-gray-800"
+                      onClick={handleBrowseDataPath}
+                      title="选择数据库路径"
+                    >
+                      <FolderOpen className="h-4 w-4 text-gray-500" />
+                    </BaseButton>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">当前路径</div>
-                    <div className="text-xs font-mono text-gray-800 dark:text-gray-200 break-all">
+                <div className="group">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 block px-1">可执行文件</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all transition-colors group-hover:border-gray-300 dark:group-hover:border-gray-700">
                       {execPath}
                     </div>
+                    <BaseButton
+                      variant="outline"
+                      size="icon"
+                      className="h-[34px] w-[34px] shrink-0 border-gray-200 dark:border-gray-800"
+                      onClick={handleBrowseExecPath}
+                      title="选择可执行文件"
+                    >
+                      <FileCode className="h-4 w-4 text-gray-500" />
+                    </BaseButton>
                   </div>
-
-                  <BaseButton
-                    variant="outline"
-                    onClick={handleBrowseExecPath}
-                    className="w-full justify-center gap-2 h-9"
-                    leftIcon={<FileCode className="h-4 w-4" />}
-                  >
-                    选择可执行文件
-                  </BaseButton>
                 </div>
               </div>
             </div>
 
-            {/* 数据库监控设置 - 全宽卡片 */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">智能监控</h3>
-              </div>
+            <div className="h-px bg-gray-100 dark:bg-gray-800" />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">自动监控数据库变化</span>
-                  {isDbMonitoringEnabled ? (
-                    <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-25"></div>
-                        <div className="relative w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full"></div>
-                      </div>
-                      <span className="text-xs font-medium">已启用</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                      <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                      <span className="text-xs font-medium">已禁用</span>
-                    </div>
-                  )}
-                </div>
+            {/* 功能开关组 */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">功能选项</h3>
 
-                {isSettingsLoading ? (
-                  <div className="p-1 bg-gray-100 dark:bg-gray-800 rounded">
-                    <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-antigravity-blue"></div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleDbMonitoringToggle(!isDbMonitoringEnabled)}
-                    disabled={isSettingsLoading}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-antigravity-blue focus:ring-offset-2 ${
-                      isDbMonitoringEnabled ? 'bg-antigravity-blue shadow-lg shadow-antigravity-blue/30' : 'bg-gray-200 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-all duration-300 ${
-                        isDbMonitoringEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                )}
-              </div>
-            </div>
+              <div className="space-y-1">
+                <SettingToggle
+                  icon={<Zap className="h-4 w-4 text-amber-500" />}
+                  title="智能监控"
+                  description="自动检测数据库变化并同步"
+                  checked={isDbMonitoringEnabled}
+                  onChange={handleDbMonitoringToggle}
+                  isLoading={isSettingsLoading}
+                />
 
-            {/* 系统托盘设置 - 全宽卡片 */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                  <Monitor className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">系统托盘</h3>
-              </div>
+                <SettingToggle
+                  icon={<Monitor className="h-4 w-4 text-blue-500" />}
+                  title="系统托盘"
+                  description="关闭窗口时最小化到托盘"
+                  checked={isSystemTrayEnabled}
+                  onChange={handleSystemTrayToggle}
+                  isLoading={isTrayLoading}
+                />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">最小化到托盘</span>
-                  {isSystemTrayEnabled ? (
-                    <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-amber-400 rounded-full animate-ping opacity-25"></div>
-                        <div className="relative w-1.5 h-1.5 bg-amber-600 dark:bg-amber-400 rounded-full"></div>
-                      </div>
-                      <span className="text-xs font-medium">已启用</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                      <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                      <span className="text-xs font-medium">已禁用</span>
-                    </div>
-                  )}
-                </div>
-
-                {isTrayLoading ? (
-                  <div className="p-1 bg-gray-100 dark:bg-gray-800 rounded">
-                    <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-amber-600"></div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleSystemTrayToggle}
-                    disabled={isTrayLoading}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                      isSystemTrayEnabled ? 'bg-amber-600 shadow-lg shadow-amber-600/30' : 'bg-gray-200 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-all duration-300 ${
-                        isSystemTrayEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* 静默启动设置 - 全宽卡片 */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <VolumeX className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">静默启动</h3>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">启动时最小化到后台</span>
-                  {isSilentStartEnabled ? (
-                    <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-purple-400 rounded-full animate-ping opacity-25"></div>
-                        <div className="relative w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full"></div>
-                      </div>
-                      <span className="text-xs font-medium">已启用</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                      <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                      <span className="text-xs font-medium">已禁用</span>
-                    </div>
-                  )}
-                </div>
-
-                {isSilentStartLoading ? (
-                  <div className="p-1 bg-gray-100 dark:bg-gray-800 rounded">
-                    <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-purple-600"></div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleSilentStartToggle(!isSilentStartEnabled)}
-                    disabled={isSilentStartLoading}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                      isSilentStartEnabled ? 'bg-purple-600 shadow-lg shadow-purple-600/30' : 'bg-gray-200 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-all duration-300 ${
-                        isSilentStartEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                )}
+                <SettingToggle
+                  icon={<VolumeX className="h-4 w-4 text-purple-500" />}
+                  title="静默启动"
+                  description="启动时自动隐藏主窗口"
+                  checked={isSilentStartEnabled}
+                  onChange={() => handleSilentStartToggle(!isSilentStartEnabled)}
+                  isLoading={isSilentStartLoading}
+                />
               </div>
             </div>
           </div>
@@ -507,5 +356,59 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     </BaseDialog>
   );
 };
+
+// 内部组件：设置开关项
+const SettingToggle = ({
+  icon,
+  title,
+  description,
+  checked,
+  onChange,
+  isLoading
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  isLoading: boolean;
+}) => (
+  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group cursor-pointer" onClick={() => !isLoading && onChange(!checked)}>
+    <div className="flex items-center gap-3">
+      <div className="p-2 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 group-hover:border-gray-200 dark:group-hover:border-gray-600 transition-colors">
+        {icon}
+      </div>
+      <div>
+        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{description}</div>
+      </div>
+    </div>
+
+    <div className="relative">
+      {isLoading ? (
+        <div className="h-5 w-9 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-gray-300 border-t-blue-600"></div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          className={cn(
+            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2",
+            checked ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+              checked ? "translate-x-4" : "translate-x-0"
+            )}
+          />
+        </button>
+      )}
+    </div>
+  </div>
+);
 
 export default BusinessSettingsDialog;
