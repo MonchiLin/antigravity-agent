@@ -1,7 +1,7 @@
 //! 账户管理命令
 //! 负责 Antigravity 账户的切换、备份、恢复、清除等操作
 
-use rusqlite::Result as SqlResult;
+use rusqlite::{Connection, Result as SqlResult};
 use serde_json::Value;
 use tauri::State;
 use tracing::instrument;
@@ -19,11 +19,11 @@ pub async fn switch_antigravity_account(
 
   let result = async {
         // 获取 Antigravity 状态数据库路径
-        let app_data = match crate::platform_utils::get_antigravity_db_path() {
+        let app_data = match crate::platform::get_antigravity_db_path() {
             Some(path) => path,
             None => {
                 // 如果主路径不存在，尝试其他可能的位置
-                let possible_paths = crate::platform_utils::get_all_antigravity_db_paths();
+                let possible_paths = crate::platform::get_all_antigravity_db_paths();
                 if possible_paths.is_empty() {
                     return Err("未找到Antigravity安装位置".to_string());
                 }
@@ -39,7 +39,7 @@ pub async fn switch_antigravity_account(
         }
 
         // 连接到 SQLite 数据库
-        let _conn = crate::Connection::open(&app_data)
+        let _conn = Connection::open(&app_data)
             .map_err(|e| format!("连接数据库失败 ({}): {}", app_data.display(), e))?;
 
         // 记录数据库操作
@@ -98,11 +98,11 @@ pub async fn get_current_antigravity_info() -> Result<Value, String> {
 
   let result = async {
         // 尝试获取 Antigravity 状态数据库路径
-        let app_data = match crate::platform_utils::get_antigravity_db_path() {
+        let app_data = match crate::platform::get_antigravity_db_path() {
             Some(path) => path,
             None => {
                 // 如果主路径不存在，尝试其他可能的位置
-                let possible_paths = crate::platform_utils::get_all_antigravity_db_paths();
+                let possible_paths = crate::platform::get_all_antigravity_db_paths();
                 if possible_paths.is_empty() {
                     return Err("未找到Antigravity安装位置".to_string());
                 }
@@ -118,7 +118,7 @@ pub async fn get_current_antigravity_info() -> Result<Value, String> {
         }
 
         // 连接到 SQLite 数据库并获取认证信息
-        let conn = crate::Connection::open(&app_data)
+        let conn = Connection::open(&app_data)
             .map_err(|e| format!("连接数据库失败 ({}): {}", app_data.display(), e))?;
 
         let auth_result: SqlResult<String> = conn.query_row(
@@ -176,11 +176,11 @@ pub async fn backup_antigravity_current_account() -> Result<String, String> {
   let result = async {
 
         // 尝试获取 Antigravity 状态数据库路径
-        let app_data = match crate::platform_utils::get_antigravity_db_path() {
+        let app_data = match crate::platform::get_antigravity_db_path() {
             Some(path) => path,
             None => {
                 // 如果主路径不存在，尝试其他可能的位置
-                let possible_paths = crate::platform_utils::get_all_antigravity_db_paths();
+                let possible_paths = crate::platform::get_all_antigravity_db_paths();
                 if possible_paths.is_empty() {
                     return Err("未找到Antigravity安装位置".to_string());
                 }
@@ -196,7 +196,7 @@ pub async fn backup_antigravity_current_account() -> Result<String, String> {
         }
 
         // 连接到 SQLite 数据库并获取认证信息
-        let conn = crate::Connection::open(&app_data)
+        let conn = Connection::open(&app_data)
             .map_err(|e| format!("连接数据库失败 ({}): {}", app_data.display(), e))?;
 
         let auth_result: SqlResult<String> = conn.query_row(
@@ -215,7 +215,7 @@ pub async fn backup_antigravity_current_account() -> Result<String, String> {
                           tracing::info!(user_email = email, "📧 检测到当前用户");
 
                             // 调用智能备份函数，让它处理去重逻辑和文件名生成
-                            match crate::antigravity_backup::smart_backup_antigravity_account(email) {
+                            match crate::antigravity::backup::smart_backup_antigravity_account(email) {
                                 Ok((backup_name, is_overwrite)) => {
                                     let action = if is_overwrite { "更新" } else { "备份" };
                                     let message = format!("Antigravity 账户 '{}'{}成功", backup_name, action);
@@ -270,7 +270,7 @@ pub async fn backup_antigravity_current_account() -> Result<String, String> {
 /// 清除所有 Antigravity 数据
 #[tauri::command]
 pub async fn clear_all_antigravity_data() -> Result<String, String> {
-    crate::antigravity_cleanup::clear_all_antigravity_data().await
+    crate::antigravity::cleanup::clear_all_antigravity_data().await
 }
 
 /// 恢复 Antigravity 账户
@@ -289,7 +289,7 @@ pub async fn restore_antigravity_account(account_name: String) -> Result<String,
     let backup_file = config_dir.join(format!("{}.json", account_name));
 
     // 2. 调用统一的恢复函数
-    crate::antigravity_restore::restore_all_antigravity_data(backup_file).await
+    crate::antigravity::restore::restore_all_antigravity_data(backup_file).await
 }
 
 /// 切换到 Antigravity 账户（调用 restore_antigravity_account）
@@ -300,7 +300,7 @@ pub async fn switch_to_antigravity_account(account_name: String) -> Result<Strin
 
         // 1. 关闭 Antigravity 进程 (如果存在)
         println!("🛑 步骤1: 检查并关闭 Antigravity 进程");
-        let kill_result = match crate::platform_utils::kill_antigravity_processes() {
+        let kill_result = match crate::platform::kill_antigravity_processes() {
             Ok(result) => {
                 if result.contains("not found") || result.contains("未找到") {
                     println!("ℹ️ Antigravity 进程未运行，跳过关闭步骤");
@@ -333,7 +333,7 @@ pub async fn switch_to_antigravity_account(account_name: String) -> Result<Strin
 
         // 3. 重新启动 Antigravity 进程
         println!("🚀 步骤3: 重新启动 Antigravity");
-        let start_result = crate::antigravity_starter::start_antigravity();
+        let start_result = crate::antigravity::starter::start_antigravity();
         let start_message = match start_result {
             Ok(result) => {
                 println!("✅ 启动结果: {}", result);

@@ -10,8 +10,8 @@ pub async fn get_platform_info() -> Result<Value, String> {
     let arch = std::env::consts::ARCH;
     let family = std::env::consts::FAMILY;
 
-    let antigravity_available = crate::platform_utils::is_antigravity_available();
-    let antigravity_paths = crate::platform_utils::get_all_antigravity_db_paths();
+    let antigravity_available = crate::platform::is_antigravity_available();
+    let antigravity_paths = crate::platform::get_all_antigravity_db_paths();
 
     Ok(serde_json::json!({
         "os": os_type,
@@ -28,7 +28,7 @@ pub async fn get_platform_info() -> Result<Value, String> {
 /// 查找 Antigravity 安装位置
 #[tauri::command]
 pub async fn find_antigravity_installations() -> Result<Vec<String>, String> {
-    let paths = crate::platform_utils::find_antigravity_installations();
+    let paths = crate::platform::find_antigravity_installations();
     Ok(paths
         .iter()
         .map(|p| p.to_string_lossy().to_string())
@@ -38,25 +38,25 @@ pub async fn find_antigravity_installations() -> Result<Vec<String>, String> {
 /// 验证 Antigravity 数据目录路径
 #[tauri::command]
 pub async fn validate_antigravity_path(path: String) -> Result<bool, String> {
-    Ok(crate::antigravity_path_config::validate_antigravity_path(&path))
+    Ok(crate::antigravity::path_config::validate_antigravity_path(&path))
 }
 
 /// 验证 Antigravity 可执行文件路径
 #[tauri::command]
 pub async fn validate_antigravity_executable(path: String) -> Result<bool, String> {
-    Ok(crate::antigravity_path_config::validate_executable_path(&path))
+    Ok(crate::antigravity::path_config::validate_executable_path(&path))
 }
 
 /// 检测 Antigravity 安装状态（数据库路径）
 #[tauri::command]
 pub async fn detect_antigravity_installation() -> Result<serde_json::Value, String> {
     // 1. 尝试从配置读取自定义路径
-    let custom_path = crate::antigravity_path_config::get_custom_data_path()
+    let custom_path = crate::antigravity::path_config::get_custom_data_path()
         .unwrap_or(None);
     
     // 2. 检查自定义路径是否有效
     if let Some(ref path) = custom_path {
-        if crate::antigravity_path_config::validate_antigravity_path(path) {
+        if crate::antigravity::path_config::validate_antigravity_path(path) {
             return Ok(serde_json::json!({
                 "found": true,
                 "path": path,
@@ -66,7 +66,7 @@ pub async fn detect_antigravity_installation() -> Result<serde_json::Value, Stri
     }
     
     // 3. 尝试自动检测（get_antigravity_db_path 会在自定义路径无效时回退）
-    if let Some(db_path) = crate::platform_utils::get_antigravity_db_path() {
+    if let Some(db_path) = crate::platform::get_antigravity_db_path() {
         if db_path.exists() {
             let data_dir = db_path.parent()
                 .map(|p| p.to_string_lossy().to_string())
@@ -96,12 +96,12 @@ pub async fn detect_antigravity_installation() -> Result<serde_json::Value, Stri
 #[tauri::command]
 pub async fn detect_antigravity_executable() -> Result<serde_json::Value, String> {
     // 1. 尝试从配置读取自定义可执行文件路径
-    let custom_exec = crate::antigravity_path_config::get_custom_executable_path()
+    let custom_exec = crate::antigravity::path_config::get_custom_executable_path()
         .unwrap_or(None);
     
     // 2. 检查自定义可执行文件路径是否有效
     if let Some(ref path) = custom_exec {
-        if crate::antigravity_path_config::validate_executable_path(path) {
+        if crate::antigravity::path_config::validate_executable_path(path) {
             return Ok(serde_json::json!({
                 "found": true,
                 "path": path,
@@ -111,7 +111,7 @@ pub async fn detect_antigravity_executable() -> Result<serde_json::Value, String
     }
     
     // 3. 尝试自动检测
-    let detected_path = crate::antigravity_starter::detect_antigravity_executable();
+    let detected_path = crate::antigravity::starter::detect_antigravity_executable();
     if let Some(exec_path) = detected_path {
         println!("✅ 检测到 Antigravity 可执行文件: {}", exec_path.display());
         
@@ -135,12 +135,12 @@ pub async fn detect_antigravity_executable() -> Result<serde_json::Value, String
 #[tauri::command]
 pub async fn save_antigravity_path(path: String) -> Result<String, String> {
     // 1. 验证路径有效性
-    if !crate::antigravity_path_config::validate_antigravity_path(&path) {
+    if !crate::antigravity::path_config::validate_antigravity_path(&path) {
         return Err(format!("路径无效：未在目录 '{}' 中找到 state.vscdb 文件", path));
     }
     
     // 2. 保存路径到配置
-    crate::antigravity_path_config::save_custom_data_path(path.clone())?;
+    crate::antigravity::path_config::save_custom_data_path(path.clone())?;
     
     Ok(format!("已保存 Antigravity 数据目录路径: {}", path))
 }
@@ -149,12 +149,12 @@ pub async fn save_antigravity_path(path: String) -> Result<String, String> {
 #[tauri::command]
 pub async fn save_antigravity_executable(path: String) -> Result<String, String> {
     // 1. 验证路径有效性
-    if !crate::antigravity_path_config::validate_executable_path(&path) {
+    if !crate::antigravity::path_config::validate_executable_path(&path) {
         return Err(format!("路径无效：文件 '{}' 不存在或不是可执行文件", path));
     }
     
     // 2. 保存路径到配置
-    crate::antigravity_path_config::save_custom_executable_path(path.clone())?;
+    crate::antigravity::path_config::save_custom_executable_path(path.clone())?;
     
     Ok(format!("已保存 Antigravity 可执行文件路径: {}", path))
 }
@@ -162,9 +162,9 @@ pub async fn save_antigravity_executable(path: String) -> Result<String, String>
 /// 获取当前配置的路径
 #[tauri::command]
 pub async fn get_current_paths() -> Result<serde_json::Value, String> {
-    let data_path = crate::antigravity_path_config::get_custom_data_path()
+    let data_path = crate::antigravity::path_config::get_custom_data_path()
         .unwrap_or(None);
-    let exec_path = crate::antigravity_path_config::get_custom_executable_path()
+    let exec_path = crate::antigravity::path_config::get_custom_executable_path()
         .unwrap_or(None);
     
     Ok(serde_json::json!({

@@ -23,7 +23,7 @@ use std::process::{Command, Stdio};
 /// ```
 pub fn start_antigravity() -> Result<String, String> {
     // 优先使用用户配置的可执行文件路径
-    if let Ok(Some(custom_exec)) = crate::antigravity_path_config::get_custom_executable_path() {
+    if let Ok(Some(custom_exec)) = crate::antigravity::path_config::get_custom_executable_path() {
         let path = PathBuf::from(&custom_exec);
         if path.exists() && path.is_file() {
             tracing::info!("📁 使用自定义 Antigravity 可执行文件: {}", custom_exec);

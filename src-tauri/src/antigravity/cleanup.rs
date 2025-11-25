@@ -7,7 +7,7 @@ use std::path::Path;
 
 // 导入 platform_utils 模块
 use crate::constants::database;
-use crate::platform_utils;
+use crate::platform;
 
 /// 使用常量定义需要物理删除的字段
 const DELETE_KEYS: &[&str] = database::DELETE_KEYS;
@@ -88,10 +88,10 @@ fn clear_database(db_path: &Path, db_name: &str) -> Result<usize, String> {
 pub async fn clear_all_antigravity_data() -> Result<String, String> {
     println!("🗑️ 开始清除 Antigravity 用户认证数据（保留设备指纹）");
 
-    let app_data = match platform_utils::get_antigravity_db_path() {
+    let app_data = match platform::get_antigravity_db_path() {
         Some(p) => p,
         None => {
-            let possible_paths = platform_utils::get_all_antigravity_db_paths();
+            let possible_paths = platform::get_all_antigravity_db_paths();
             if possible_paths.is_empty() {
                 return Err("未找到 Antigravity 安装位置".to_string());
             }
