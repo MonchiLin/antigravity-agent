@@ -99,6 +99,35 @@ pub async fn decrypt_config_data(encrypted_data: String, password: String) -> Re
     })
 }
 
+/// 加密配置数据
+/// 接收 JSON 字符串，使用密码进行 XOR 加密，返回 Base64 编码的字符串
+#[tauri::command]
+pub async fn encrypt_config_data(json_data: String, password: String) -> Result<String, String> {
+    crate::log_async_command!("encrypt_config_data", async {
+        use base64::{Engine as _, engine::general_purpose::STANDARD};
+
+        // 验证是否为有效的JSON
+        if serde_json::from_str::<serde_json::Value>(&json_data).is_err() {
+            return Err("输入的数据不是有效的JSON格式".to_string());
+        }
+
+        // 使用 XOR 加密
+        let data_bytes = json_data.as_bytes();
+        let key_bytes = password.as_bytes();
+        let mut encrypted_bytes = vec![0u8; data_bytes.len()];
+
+        for (i, &byte) in data_bytes.iter().enumerate() {
+            encrypted_bytes[i] = byte ^ key_bytes[i % key_bytes.len()];
+        }
+
+        // Base64 编码
+        let encrypted_base64 = STANDARD.encode(&encrypted_bytes);
+
+        tracing::info!("🔐 配置文件加密成功，数据大小: {} bytes", data_bytes.len());
+        Ok(encrypted_base64)
+    })
+}
+
 #[tauri::command]
 pub async fn clear_logs() -> Result<String, String> {
     crate::log_async_command!("clear_logs", async {

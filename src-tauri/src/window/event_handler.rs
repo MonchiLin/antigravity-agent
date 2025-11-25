@@ -1,7 +1,7 @@
 // 窗口事件处理模块
 // 负责在应用启动时恢复窗口状态
 
-use crate::window_state_manager::{load_window_state, save_window_state, WindowState};
+use super::state_manager::{load_window_state, save_window_state, WindowState};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::Manager;

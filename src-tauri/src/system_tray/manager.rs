@@ -1,17 +1,13 @@
-//! 系统托盘管理模块
-//!
-//! 负责系统托盘的生命周期管理、菜单构建和事件处理。
-//! 使用 AppSettingsManager 进行状态持久化。
-
 use std::sync::Mutex;
 use tauri::{
     image::Image,
-    menu::{MenuBuilder, MenuItem, SubmenuBuilder},
     tray::{MouseButton, TrayIcon, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, Wry,
+    AppHandle, Manager,
 };
 
 use crate::app_settings::AppSettingsManager;
+use super::menu::build_menu;
+use super::events::handle_menu_event;
 
 /// 系统托盘管理器
 pub struct SystemTrayManager {
@@ -40,9 +36,6 @@ impl SystemTrayManager {
         if settings.system_tray_enabled {
             // 初始化时异步创建图标
             let app_handle_clone = app_handle.clone();
- 
-            // Actually SystemTrayManager is managed by Tauri which wraps it in Arc.
-            // But here we are inside a method of SystemTrayManager.
             
             // We can just spawn a task to do the async work
             tauri::async_runtime::spawn(async move {
@@ -133,7 +126,7 @@ impl SystemTrayManager {
     // --- 内部辅助方法 ---
 
     /// 创建托盘图标
-    async fn create_tray_icon(&self, app_handle: &AppHandle) -> Result<(), String> {
+    pub(crate) async fn create_tray_icon(&self, app_handle: &AppHandle) -> Result<(), String> {
         // 1. 快速检查：如果已存在则直接返回
         {
             let tray_lock = self.tray_icon.lock().unwrap();
@@ -143,7 +136,7 @@ impl SystemTrayManager {
         }
 
         // 2. 构建菜单（这是一个异步操作，不能持有锁）
-        let menu = self.build_menu(app_handle).await.map_err(|e| e.to_string())?;
+        let menu = build_menu(app_handle).await.map_err(|e| e.to_string())?;
         
         // 3. 再次获取锁进行创建（双重检查）
         let mut tray_lock = self.tray_icon.lock().unwrap();
@@ -158,7 +151,7 @@ impl SystemTrayManager {
                 let id = event.id.as_ref().to_string();
                 let app_clone = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    Self::handle_menu_event(&app_clone, &id).await;
+                    handle_menu_event(&app_clone, &id).await;
                 });
             })
             .on_tray_icon_event(|tray, event| {
@@ -215,134 +208,11 @@ impl SystemTrayManager {
         }
         None
     }
-
-    /// 构建托盘菜单
-    async fn build_menu(&self, app_handle: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
-        let mut menu_builder = MenuBuilder::new(app_handle);
-
-        // 1. 获取账户列表
-        let state = app_handle.state::<crate::AppState>();
-        let recent_accounts = crate::commands::backup_commands::get_recent_accounts(state.clone(), Some(2)).await.unwrap_or_default();
-        let all_accounts = crate::commands::backup_commands::get_recent_accounts(state.clone(), None).await.unwrap_or_default();
-
-        // 2. 添加账户相关菜单
-        if !all_accounts.is_empty() {
-            // 快速切换（最近2个账户）
-            if !recent_accounts.is_empty() {
-                let label_item = MenuItem::new(app_handle, "快速切换", false, None::<&str>)?;
-                menu_builder = menu_builder.item(&label_item);
-
-                for account in &recent_accounts {
-                    let menu_id = format!("switch_account:{}", account);
-                    let item = MenuItem::with_id(
-                        app_handle,
-                        &menu_id,
-                        format!("  {}", account),
-                        true,
-                        None::<&str>,
-                    )?;
-                    menu_builder = menu_builder.item(&item);
-                }
-
-                menu_builder = menu_builder.separator();
-            }
-
-            // 所有账户子菜单（超过2个时显示）
-            if all_accounts.len() > 2 {
-                let mut submenu_builder = SubmenuBuilder::new(app_handle, "所有账户");
-
-                for account in &all_accounts {
-                    let menu_id = format!("switch_account:{}", account);
-                    let item = MenuItem::with_id(
-                        app_handle,
-                        &menu_id,
-                        account,
-                        true,
-                        None::<&str>,
-                    )?;
-                    submenu_builder = submenu_builder.item(&item);
-                }
-
-                let submenu = submenu_builder.build()?;
-                menu_builder = menu_builder.item(&submenu);
-                menu_builder = menu_builder.separator();
-            }
-
-            // 刷新账户列表
-            let refresh_item = MenuItem::with_id(
-                app_handle,
-                "refresh_accounts",
-                "刷新账户列表",
-                true,
-                None::<&str>,
-            )?;
-            menu_builder = menu_builder.item(&refresh_item);
-            menu_builder = menu_builder.separator();
-        }
-
-        // 3. 窗口控制菜单
-        let show_item = MenuItem::with_id(app_handle, "show", "显示窗口", true, None::<&str>)?;
-        let hide_item = MenuItem::with_id(app_handle, "hide", "隐藏窗口", true, None::<&str>)?;
-        let quit_item = MenuItem::with_id(app_handle, "quit", "退出应用", true, None::<&str>)?;
-
-        menu_builder = menu_builder
-            .item(&show_item)
-            .separator()
-            .item(&hide_item)
-            .separator()
-            .item(&quit_item);
-
-        menu_builder.build()
-    }
-
-    /// 处理菜单事件
-    async fn handle_menu_event(app: &AppHandle, event_id: &str) {
-        match event_id {
-            "show" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }
-            "hide" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
-                }
-            }
-            "quit" => {
-                app.exit(0);
-            }
-            "refresh_accounts" => {
-                let system_tray = app.state::<SystemTrayManager>();
-                if let Err(e) = system_tray.update_menu(app).await {
-                    eprintln!("刷新托盘菜单失败: {}", e);
-                }
-            }
-            id if id.starts_with("switch_account:") => {
-                if let Some(account_name) = id.strip_prefix("switch_account:") {
-                    println!("📋 菜单: 切换账户 -> {}", account_name);
-                    let account_name = account_name.to_string();
-                    
-                    match crate::commands::account_commands::switch_to_antigravity_account(account_name).await {
-                        Ok(msg) => {
-                            println!("✅ 账户切换成功: {}", msg);
-                            let system_tray = app.state::<SystemTrayManager>();
-                            if let Err(e) = system_tray.update_menu(app).await {
-                                eprintln!("重建托盘菜单失败: {}", e);
-                            }
-                        }
-                        Err(e) => eprintln!("❌ 账户切换失败: {}", e),
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
     
     /// 重建并更新菜单（用于账户列表更新）
     pub async fn update_menu(&self, app_handle: &AppHandle) -> Result<(), String> {
         // 1. 先构建菜单（异步操作，不持有锁）
-        let menu = self.build_menu(app_handle).await.map_err(|e| e.to_string())?;
+        let menu = build_menu(app_handle).await.map_err(|e| e.to_string())?;
         
         // 2. 获取锁并更新
         let tray_lock = self.tray_icon.lock().unwrap();

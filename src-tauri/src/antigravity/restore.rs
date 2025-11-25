@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 // 导入相关模块
 use crate::constants::database;
-use crate::platform_utils;
+use crate::platform;
 
 /// 从备份的 Marker 中获取 Key 对应的 flag (0 或 1)
 /// 如果找不到，回退到安全默认值
@@ -240,10 +240,10 @@ pub async fn restore_all_antigravity_data(backup_file_path: PathBuf) -> Result<S
 
     println!("✅ 备份文件读取成功");
 
-    let app_data = match platform_utils::get_antigravity_db_path() {
+    let app_data = match platform::get_antigravity_db_path() {
         Some(p) => p,
         None => {
-            let possible_paths = platform_utils::get_all_antigravity_db_paths();
+            let possible_paths = platform::get_all_antigravity_db_paths();
             if possible_paths.is_empty() {
                 return Err("未找到 Antigravity 安装位置".to_string());
             }

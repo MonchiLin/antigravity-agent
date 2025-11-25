@@ -1,22 +1,22 @@
 //! 进程管理命令
 //! 负责 Antigravity 进程的启动、关闭、重启等操作
-
+use rusqlite::Connection;
 /// 关闭 Antigravity 进程
 #[tauri::command]
 pub async fn kill_antigravity() -> Result<String, String> {
-    crate::platform_utils::kill_antigravity_processes()
+    crate::platform::kill_antigravity_processes()
 }
 
 /// 启动 Antigravity 应用
 #[tauri::command]
 pub async fn start_antigravity() -> Result<String, String> {
-    crate::antigravity_starter::start_antigravity()
+    crate::antigravity::starter::start_antigravity()
 }
 
 /// 检查 Antigravity 进程是否正在运行
 #[tauri::command]
 pub async fn is_antigravity_running() -> bool {
-    crate::platform_utils::is_antigravity_running()
+    crate::platform::is_antigravity_running()
 }
 
 /// 列出所有 Antigravity 相关的进程（用于调试）
@@ -30,14 +30,14 @@ pub async fn list_antigravity_processes() -> Result<Vec<serde_json::Value>, Stri
     system.refresh_all();
 
     let mut found_processes = Vec::new();
-    let process_patterns = crate::platform_utils::get_antigravity_process_patterns_for_debug();
+    let process_patterns = crate::platform::get_antigravity_process_patterns_for_debug();
 
     for (pid, process) in system.processes() {
         let process_name = process.name();
         let process_cmd = process.cmd().join(" ");
 
         for (i, pattern) in process_patterns.iter().enumerate() {
-            if crate::platform_utils::matches_antigravity_process_for_debug(
+            if crate::platform::matches_antigravity_process_for_debug(
                 process_name, &process_cmd, pattern
             ) {
                 found_processes.push(json!({
@@ -63,7 +63,7 @@ pub async fn backup_and_restart_antigravity() -> Result<String, String> {
 
     // 1. 关闭进程 (如果存在)
     println!("🛑 步骤1: 检查并关闭 Antigravity 进程");
-    let kill_result = match crate::platform_utils::kill_antigravity_processes() {
+    let kill_result = match crate::platform::kill_antigravity_processes() {
         Ok(result) => {
             if result.contains("not found") || result.contains("未找到") {
                 println!("ℹ️ Antigravity 进程未运行，跳过关闭步骤");
@@ -92,12 +92,12 @@ pub async fn backup_and_restart_antigravity() -> Result<String, String> {
 
     let backup_info = {
         // 获取邮箱
-        if let Some(app_data) = crate::platform_utils::get_antigravity_db_path() {
+        if let Some(app_data) = crate::platform::get_antigravity_db_path() {
             // 尝试打开数据库
-            match crate::Connection::open(&app_data) {
+            match Connection::open(&app_data) {
                 Ok(conn) => {
                     // 尝试获取认证信息
-                    let auth_result: Result<String, _> = conn.query_row(
+                    let auth_result: rusqlite::Result<String> = conn.query_row(
                         "SELECT value FROM ItemTable WHERE key = 'antigravityAuthStatus'",
                         [],
                         |row| row.get(0),
@@ -114,7 +114,7 @@ pub async fn backup_and_restart_antigravity() -> Result<String, String> {
                                         println!("📧 获取到的邮箱: {}", email);
                                         
                                         // 尝试备份
-                                        match crate::antigravity_backup::smart_backup_antigravity_account(email) {
+                                        match crate::antigravity::backup::smart_backup_antigravity_account(email) {
                                             Ok((backup_name, is_overwrite)) => {
                                                 let backup_action = if is_overwrite { "更新" } else { "创建" };
                                                 println!("✅ 备份完成 ({}): {}", backup_action, backup_name);
@@ -155,7 +155,7 @@ pub async fn backup_and_restart_antigravity() -> Result<String, String> {
 
     // 3. 清除 Antigravity 所有数据 (彻底注销)
     println!("🗑️ 步骤3: 清除所有 Antigravity 数据 (彻底注销)");
-    match crate::antigravity_cleanup::clear_all_antigravity_data().await {
+    match crate::antigravity::cleanup::clear_all_antigravity_data().await {
         Ok(result) => {
             println!("✅ 清除完成: {}", result);
         }
@@ -170,7 +170,7 @@ pub async fn backup_and_restart_antigravity() -> Result<String, String> {
 
     // 4. 重新启动进程
     println!("🚀 步骤4: 重新启动 Antigravity");
-    let start_result = crate::antigravity_starter::start_antigravity();
+    let start_result = crate::antigravity::starter::start_antigravity();
     let start_message = match start_result {
         Ok(result) => {
             println!("✅ 启动结果: {}", result);
