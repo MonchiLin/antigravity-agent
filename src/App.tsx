@@ -1,19 +1,19 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {useDevToolsShortcut} from './hooks/useDevToolsShortcut';
-import {usePasswordDialog} from './hooks/use-password-dialog';
-import {useUserManagement} from './modules/user-management/store';
-import {DATABASE_EVENTS, useDbMonitoringStore} from './modules/db-monitoring-store';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDevToolsShortcut } from './hooks/useDevToolsShortcut';
+import { usePasswordDialog } from './hooks/use-password-dialog';
+import { useUserManagement } from './modules/user-management/store';
+import { DATABASE_EVENTS, useDbMonitoringStore } from './modules/db-monitoring-store';
 import useConfigManager from './modules/config-management/useConfigStore';
-import {useAntigravityProcess} from './hooks/use-antigravity-process';
+import { useAntigravityProcess } from './hooks/use-antigravity-process';
 import BusinessManageSection from './components/business/ManageSection';
 import StatusNotification from './components/StatusNotification';
 import Toolbar from './components/Toolbar';
 import AntigravityPathDialog from './components/AntigravityPathDialog';
 import BusinessSettingsDialog from './components/business/SettingsDialog';
 import PasswordDialog from './components/PasswordDialog';
-import {TooltipProvider} from './components/ui/tooltip';
-import {AntigravityPathService} from './services/antigravity-path-service';
-import {exit} from '@tauri-apps/plugin-process';
+import { TooltipProvider } from './components/ui/tooltip';
+import { AntigravityPathService } from './services/antigravity-path-service';
+import { exit } from '@tauri-apps/plugin-process';
 
 interface Status {
   message: string;
@@ -26,7 +26,7 @@ interface Status {
  */
 function AppContent() {
   // ========== 应用状态 ==========
-  const [status, setStatus] = useState<Status>({message: '', isError: false});
+  const [status, setStatus] = useState<Status>({ message: '', isError: false });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDetecting, setIsDetecting] = useState(true);
   const [isPathDialogOpen, setIsPathDialogOpen] = useState(false);
@@ -36,8 +36,8 @@ function AppContent() {
 
   // 状态提示
   const showStatus = useCallback((message: string, isError: boolean = false): void => {
-    setStatus({message, isError});
-    setTimeout(() => setStatus({message: '', isError: false}), 5000);
+    setStatus({ message, isError });
+    setTimeout(() => setStatus({ message: '', isError: false }), 5000);
   }, []);
 
   // 密码对话框
@@ -49,10 +49,10 @@ function AppContent() {
   } = usePasswordDialog(showStatus);
 
   // 用户管理
-  const {addCurrentUser} = useUserManagement();
+  const { addCurrentUser } = useUserManagement();
 
   // 监听数据库变化事件
-  const {loadSettings, addListener} = useDbMonitoringStore();
+  const { loadSettings, addListener } = useDbMonitoringStore();
 
   useEffect(() => {
     loadSettings()
@@ -60,17 +60,15 @@ function AppContent() {
   }, []);
 
   // 配置管理
-  const {isImporting, isExporting, hasUserData, isCheckingData, importConfig, exportConfig} = useConfigManager(
+  const { isImporting, isExporting, hasUserData, isCheckingData, importConfig, exportConfig } = useConfigManager(
     showStatus,
     showPasswordDialog,
     closePasswordDialog,
-    () => {
-    }, // 空的 onRefresh 函数
     false   // isRefreshing = false
   );
 
   // 进程管理
-  const {isProcessLoading, backupAndRestartAntigravity} = useAntigravityProcess(showStatus, () => {});
+  const { isProcessLoading, backupAndRestartAntigravity } = useAntigravityProcess(showStatus, () => { });
 
   // ========== 初始化启动流程 ==========
   const initializeApp = useCallback(async () => {
@@ -176,7 +174,7 @@ function AppContent() {
         />
       </div>
 
-      <StatusNotification status={status}/>
+      <StatusNotification status={status} />
 
       <PasswordDialog
         isOpen={passwordDialog.isOpen}
@@ -207,7 +205,7 @@ function AppContent() {
  */
 function App() {
   return <TooltipProvider>
-    <AppContent/>
+    <AppContent />
   </TooltipProvider>
 
 }

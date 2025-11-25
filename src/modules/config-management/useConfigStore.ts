@@ -9,7 +9,6 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { AntigravityService } from '../../services/antigravity-service';
-import { SimpleEncryption } from '../../utils/encryption';
 
 // 内部类型定义 (不导出)
 interface BackupData {
@@ -50,8 +49,7 @@ interface ConfigActions {
   importConfig: (
     showStatus: (message: string, isError?: boolean) => void,
     showPasswordDialog: (config: PasswordDialogConfig) => void,
-    closePasswordDialog: () => void,
-    onRefresh: () => void
+    closePasswordDialog: () => void
   ) => Promise<void>;
   exportConfig: (
     showStatus: (message: string, isError?: boolean) => void,
@@ -94,8 +92,7 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
     importConfig: async (
       showStatus: (message: string, isError?: boolean) => void,
       showPasswordDialog: (config: PasswordDialogConfig) => void,
-      closePasswordDialog: () => void,
-      onRefresh: () => void
+      closePasswordDialog: () => void
     ): Promise<void> => {
       console.log('🔍 [导入] 开始导入配置文件');
 
@@ -128,7 +125,7 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
         const fileContentUint8Array = await readFile(selected);
         const fileContent = new TextDecoder().decode(fileContentUint8Array);
 
-  
+
         if (fileContent.length === 0) {
           console.log('❌ [导入] 文件内容为空');
           showStatus('文件内容为空', true);
@@ -140,7 +137,11 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
           title: '导入配置文件',
           description: '请输入配置文件的解密密码',
           requireConfirmation: false,
-          validatePassword: SimpleEncryption.validatePassword,
+          validatePassword: (password: string) => {
+            if (password.length < 4) return { isValid: false, message: '密码长度至少为4位' };
+            if (password.length > 50) return { isValid: false, message: '密码长度不能超过50位' };
+            return { isValid: true };
+          },
           onSubmit: async (password) => {
             try {
               closePasswordDialog();
@@ -159,13 +160,25 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
                 throw new Error('配置文件格式无效');
               }
 
-              showStatus(`配置文件导入成功 (版本: ${configData.version})`);
-              console.log('导入的配置:', configData);
+              console.log('📋 [导入] 开始恢复备份数据...');
+              showStatus('正在恢复账户数据...');
 
-              // 延迟刷新以确保数据完整性
-              setTimeout(() => {
-                onRefresh();
-              }, 500);
+              // ✅ 调用后端恢复备份文件
+              interface RestoreResult {
+                restoredCount: number;  // 后端使用 #[serde(rename = "restoredCount")]
+                failed: Array<{ filename: string; error: string }>;
+              }
+              const result = await invoke<RestoreResult>('restore_backup_files', {
+                backups: configData.backups
+              });
+
+              if (result.failed.length > 0) {
+                console.warn('⚠️ [导入] 部分文件恢复失败:', result.failed);
+                showStatus(`配置文件导入成功，已恢复 ${result.restoredCount} 个账户，${result.failed.length} 个失败`);
+              } else {
+                console.log('✅ [导入] 所有文件恢复成功');
+                showStatus(`配置文件导入成功，已恢复 ${result.restoredCount} 个账户`);
+              }
 
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
@@ -191,41 +204,50 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
       closePasswordDialog: () => void
     ): Promise<void> => {
       try {
-        // 检查是否有可导出的数据
-        const backupList = await AntigravityService.getBackupList();
-        if (backupList.length === 0) {
+        console.log('📋 [导出] 开始收集备份数据...');
+        showStatus('正在收集账户数据...');
+
+        // ✅ 获取包含完整内容的备份数据
+        const backupsWithContent = await invoke<BackupData[]>('collect_backup_contents');
+
+        if (backupsWithContent.length === 0) {
           showStatus('没有找到任何用户信息，无法导出配置文件', true);
           return;
         }
 
-        console.log('📋 [导出] 找到备份数据:', backupList.length, '个');
+        console.log('📋 [导出] 找到备份数据:', backupsWithContent.length, '个');
 
         // 使用密码对话框获取密码
         showPasswordDialog({
           title: '导出配置文件',
           description: '请设置导出密码，用于保护您的配置文件',
           requireConfirmation: true,
-          validatePassword: SimpleEncryption.validatePassword,
+          validatePassword: (password: string) => {
+            if (password.length < 4) return { isValid: false, message: '密码长度至少为4位' };
+            if (password.length > 50) return { isValid: false, message: '密码长度不能超过50位' };
+            return { isValid: true };
+          },
           onSubmit: async (password) => {
             try {
               closePasswordDialog();
               set({ isExporting: true });
               showStatus('正在生成加密配置文件...');
 
-              // 构建配置数据
+              // ✅ 构建配置数据（包含完整内容）
               const configData: EncryptedConfigData = {
                 version: '1.1.0',
-                backupCount: backupList.length,
-                backups: backupList.map((filename, index) => ({
-                  filename,
-                  content: null, // 不直接包含内容，只包含文件名
-                  timestamp: Date.now() - (backupList.length - index) * 1000
-                }))
+                backupCount: backupsWithContent.length,
+                backups: backupsWithContent
               };
 
-              // 加密配置数据
+              // ✅ 调用后端加密命令（包含 JSON 序列化 + XOR 加密 + Base64 编码）
               const configJson = JSON.stringify(configData, null, 2);
-              const encryptedData = SimpleEncryption.xorEncrypt(configJson, password);
+              console.log('📋 [导出] 配置数据大小:', new Blob([configJson]).size, 'bytes');
+
+              const encryptedData = await invoke<string>('encrypt_config_data', {
+                jsonData: configJson,
+                password
+              });
 
               // 选择保存位置
               const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -248,7 +270,7 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
                 return;
               }
 
-              // 保存加密文件 - 使用通用文件写入命令
+              // 保存加密文件
               await invoke('write_text_file', {
                 path: savePath,
                 content: encryptedData
@@ -284,7 +306,6 @@ export function useConfigManager(
   showStatus: (message: string, isError?: boolean) => void,
   showPasswordDialog: (config: PasswordDialogConfig) => void,
   closePasswordDialog: () => void,
-  onRefresh: () => void,
   isRefreshing?: boolean
 ) {
   const {
@@ -313,7 +334,7 @@ export function useConfigManager(
   }, [isRefreshing, checkUserData]);
 
   // 包装方法以传递必要的参数
-  const handleImportConfig = () => importConfig(showStatus, showPasswordDialog, closePasswordDialog, onRefresh);
+  const handleImportConfig = () => importConfig(showStatus, showPasswordDialog, closePasswordDialog);
   const handleExportConfig = () => exportConfig(showStatus, showPasswordDialog, closePasswordDialog);
 
   return {
