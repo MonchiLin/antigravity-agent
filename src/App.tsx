@@ -1,16 +1,17 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {useDevToolsShortcut} from './hooks/useDevToolsShortcut';
-import {useAntigravityAccount} from './modules/use-antigravity-account.ts';
-import {DATABASE_EVENTS, useDbMonitoringStore} from './modules/db-monitoring-store';
-import {useAntigravityIsRunning} from './hooks/useAntigravityIsRunning';
-import {Toaster} from 'react-hot-toast';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDevToolsShortcut } from './hooks/useDevToolsShortcut';
+import { useAntigravityAccount } from './modules/use-antigravity-account.ts';
+import { DATABASE_EVENTS, useDbMonitoringStore } from './modules/db-monitoring-store';
+import { useAntigravityIsRunning } from './hooks/useAntigravityIsRunning';
+import { Toaster } from 'react-hot-toast';
 import AppToolbar from './AppToolbar.tsx';
-import {TooltipProvider} from './components/ui/tooltip';
-import {AntigravityPathService} from './services/antigravity-path-service';
-import {useLanguageServerState} from "@/hooks/use-language-server-state.ts";
-import {logger} from './utils/logger';
-import {AppUserPanel} from "@/AppUserPanel.tsx";
-import {AppGlobalLoader} from "@/AppGlobalLoader.tsx";
+import { TooltipProvider } from './components/ui/tooltip';
+import { AntigravityPathService } from './services/antigravity-path-service';
+import { useLanguageServerState } from "@/hooks/use-language-server-state.ts";
+import { logger } from './utils/logger';
+import { AppUserPanel } from "@/AppUserPanel.tsx";
+import { AppGlobalLoader } from "@/AppGlobalLoader.tsx";
+import { AntigravityStatusScreen } from "@/components/business/AntigravityStatusScreen";
 
 function App() {
   // ========== 应用状态 ==========
@@ -21,10 +22,10 @@ function App() {
   useDevToolsShortcut();
 
   // 用户管理
-  const {insertOrUpdateCurrent} = useAntigravityAccount();
+  const { insertOrUpdateCurrent } = useAntigravityAccount();
 
   // 监听数据库变化事件
-  const {initializeMonitoring, addListener} = useDbMonitoringStore();
+  const { initializeMonitoring, addListener } = useDbMonitoringStore();
 
   useEffect(() => {
     // 初始化监控（自动启动）
@@ -112,22 +113,21 @@ function App() {
 
   // 如果未运行
   if (!antigravityIsRunning.isRunning) {
-    // TODO 补充 UI
-    return <div>请先运行 Antigravity</div>
+    return <AntigravityStatusScreen onRetry={() => antigravityIsRunning.checkStatus()} />;
   }
 
   return <>
     <TooltipProvider>
-      <AppToolbar/>
+      <AppToolbar />
       <div className="container">
-        <AppUserPanel/>
+        <AppUserPanel />
       </div>
     </TooltipProvider>
     <Toaster
       position="bottom-right"
       reverseOrder={false}
     />
-    <AppGlobalLoader/>
+    <AppGlobalLoader />
   </>;
 }
 

@@ -1,0 +1,156 @@
+/* AntigravityStatusScreen.css */
+
+/* 基础动画定义 */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes rotate-slow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes scan-line {
+    0% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100%);
+    }
+}
+
+/* 变体 1: 星云 (Nebula) */
+.ag-nebula-bg {
+    background: radial-gradient(circle at 50% 50%, #1a1f35 0%, #0f111a 100%);
+    overflow: hidden;
+    position: relative;
+}
+
+.ag-nebula-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: float 10s ease-in-out infinite;
+}
+
+.ag-nebula-orb-1 {
+    top: 20%;
+    left: 30%;
+    width: 300px;
+    height: 300px;
+    background: #4f46e5;
+    /* Indigo */
+    animation-delay: 0s;
+}
+
+.ag-nebula-orb-2 {
+    bottom: 20%;
+    right: 30%;
+    width: 400px;
+    height: 400px;
+    background: #7c3aed;
+    /* Violet */
+    animation-delay: -5s;
+}
+
+.ag-nebula-content {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* 变体 2: 矩阵 (Matrix/Tech) */
+.ag-tech-bg {
+    background-color: #000;
+    background-image:
+        linear-gradient(rgba(0, 255, 70, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 70, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+}
+
+.ag-tech-scanner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(0, 255, 70, 0.1), transparent);
+    animation: scan-line 3s linear infinite;
+    pointer-events: none;
+}
+
+.ag-tech-card {
+    background: rgba(0, 20, 0, 0.8);
+    border: 1px solid rgba(0, 255, 70, 0.3);
+    box-shadow: 0 0 20px rgba(0, 255, 70, 0.1);
+}
+
+/* 变体 3: 极简 (Minimal) */
+.ag-minimal-bg {
+    background: #ffffff;
+}
+
+.dark .ag-minimal-bg {
+    background: #09090b;
+}
+
+.ag-minimal-circle {
+    position: absolute;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.dark .ag-minimal-circle {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ag-minimal-circle-1 {
+    width: 300px;
+    height: 300px;
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.ag-minimal-circle-2 {
+    width: 500px;
+    height: 500px;
+    animation: pulse-glow 4s ease-in-out infinite 1s;
+}
+
+.ag-minimal-circle-3 {
+    width: 700px;
+    height: 700px;
+    animation: pulse-glow 4s ease-in-out infinite 2s;
+}
