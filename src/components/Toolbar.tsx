@@ -1,16 +1,15 @@
 import React, {useMemo, useState} from 'react';
-import {Download, Plus, RefreshCw, Upload, Activity, Play, Square} from 'lucide-react';
+import {Download, Play, Plus, Square, Upload} from 'lucide-react';
 import BusinessUpdateDialog from './business/UpdateDialog';
 import BusinessConfirmDialog from './business/ConfirmDialog';
 import BusinessActionButton from './business/ActionButton';
 import {TooltipProvider} from './ui/tooltip';
 import ToolbarTitle from './ui/toolbar-title';
 import {useUpdateChecker} from '../hooks/useUpdateChecker';
-import {useUserManagement} from '@/modules/user-management/store';
+import {useAntigravityAccount} from '@/modules/use-antigravity-account.ts';
 import {useAntigravityIsRunning} from '@/hooks/useAntigravityIsRunning';
-import { invoke } from '@tauri-apps/api/core';
-import {AccountCommands} from "@/commands/AccountCommands.ts";
-import { logger } from '../utils/logger';
+import {logger} from '../utils/logger';
+import toast from 'react-hot-toast';
 
 interface LoadingState {
   isProcessLoading: boolean;
@@ -30,7 +29,6 @@ interface ToolbarProps {
 
   // 状态
   loadingState: LoadingState;
-  showStatus: (message: string, isError?: boolean) => void;
 
   // 设置
   onSettingsClick?: () => void;
@@ -43,10 +41,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
   isCheckingData,
   onBackupAndRestart,
   loadingState = { isProcessLoading: false, isImporting: false, isExporting: false },
-  showStatus,
   onSettingsClick
 }) => {
-  const {users} = useUserManagement();
+  const {users} = useAntigravityAccount();
   
   // Antigravity 进程状态
   const isRunning = useAntigravityIsRunning((state) => state.isRunning);
@@ -119,7 +116,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const handleStartDownload = async () => {
     try {
       await startDownload();
-      showStatus('更新包下载完成，点击重启按钮安装', false);
+      toast.success('更新包下载完成，点击重启按钮安装');
     } catch (error) {
       // 只在控制台打印错误，不提示用户
       logger.error('下载失败', {
@@ -133,7 +130,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   // 处理安装并重启
   const handleInstallAndRelaunch = async () => {
     try {
-      showStatus('正在安装更新并重启应用...', false);
+      toast('正在安装更新并重启应用...');
       await installAndRelaunch();
       // 如果成功，应用会重启，这里的代码不会执行
     } catch (error) {

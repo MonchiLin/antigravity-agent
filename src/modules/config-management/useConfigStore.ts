@@ -3,12 +3,11 @@
  * 直接使用 Zustand，集成所有配置管理逻辑，提供完整接口
  */
 
-import { useEffect } from 'react';
-import { create } from 'zustand';
-import { open, save } from '@tauri-apps/plugin-dialog';
-import { readFile } from '@tauri-apps/plugin-fs';
-import { invoke } from '@tauri-apps/api/core';
-import { logger } from '../../utils/logger';
+import {create} from 'zustand';
+import {open, save} from '@tauri-apps/plugin-dialog';
+import {readFile} from '@tauri-apps/plugin-fs';
+import {invoke} from '@tauri-apps/api/core';
+import {logger} from '../../utils/logger';
 // AntigravityService 导入移除了，现在使用 user-management store
 
 // 内部类型定义 (不导出)
@@ -47,12 +46,10 @@ interface ConfigActions {
   // setHasUserData 和 checkUserData 移除了，现在由 user-management store 管理
   setCheckingData: (isCheckingData: boolean) => void;
   importConfig: (
-    showStatus: (message: string, isError?: boolean) => void,
     showPasswordDialog: (config: PasswordDialogConfig) => void,
     closePasswordDialog: () => void
   ) => Promise<void>;
   exportConfig: (
-    showStatus: (message: string, isError?: boolean) => void,
     showPasswordDialog: (config: PasswordDialogConfig) => void,
     closePasswordDialog: () => void
   ) => Promise<void>;
@@ -76,7 +73,6 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
 
     // ============ 导入配置 ============
     importConfig: async (
-      showStatus: (message: string, isError?: boolean) => void,
       showPasswordDialog: (config: PasswordDialogConfig) => void,
       closePasswordDialog: () => void
     ): Promise<void> => {
@@ -208,7 +204,6 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
 
     // ============ 导出配置 ============
     exportConfig: async (
-      showStatus: (message: string, isError?: boolean) => void,
       showPasswordDialog: (config: PasswordDialogConfig) => void,
       closePasswordDialog: () => void
     ): Promise<void> => {
@@ -338,7 +333,6 @@ export const useConfigStore = create<ConfigState & ConfigActions>()(
  * 提供与原 useConfigManager 相同的接口，但基于 useConfigStore
  */
 export function useConfigManager(
-  showStatus: (message: string, isError?: boolean) => void,
   showPasswordDialog: (config: PasswordDialogConfig) => void,
   closePasswordDialog: () => void
 ) {
@@ -354,8 +348,8 @@ export function useConfigManager(
   // checkUserData 相关逻辑移除了，现在由 user-management store 管理
 
   // 包装方法以传递必要的参数
-  const handleImportConfig = () => importConfig(showStatus, showPasswordDialog, closePasswordDialog);
-  const handleExportConfig = () => exportConfig(showStatus, showPasswordDialog, closePasswordDialog);
+  const handleImportConfig = () => importConfig(showPasswordDialog, closePasswordDialog);
+  const handleExportConfig = () => exportConfig(showPasswordDialog, closePasswordDialog);
 
   return {
     isImporting,

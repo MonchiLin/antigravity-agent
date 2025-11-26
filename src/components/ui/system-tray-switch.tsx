@@ -1,11 +1,11 @@
 import React from 'react';
 import * as Switch from '@radix-ui/react-switch';
+import toast from 'react-hot-toast';
 
 interface SystemTraySwitchProps {
   checked: boolean;
   onCheckedChange: () => void;
   disabled?: boolean;
-  showStatus: (message: string, isError?: boolean) => void;
 }
 
 /**
@@ -18,8 +18,7 @@ interface SystemTraySwitchProps {
 const SystemTraySwitch: React.FC<SystemTraySwitchProps> = ({
   checked,
   onCheckedChange,
-  disabled = false,
-  showStatus
+                                                             disabled = false
 }) => {
   const [isChanging, setIsChanging] = React.useState(false);
 
@@ -34,7 +33,7 @@ const SystemTraySwitch: React.FC<SystemTraySwitchProps> = ({
       // 直接调用父组件提供的处理函数，所有业务逻辑都在那里处理
       await onCheckedChange();
     } catch (error) {
-      showStatus('操作失败，请重试', true);
+      toast.error('操作失败，请重试');
     } finally {
       setIsChanging(false);
     }

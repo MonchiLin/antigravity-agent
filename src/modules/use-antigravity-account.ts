@@ -1,26 +1,43 @@
-/**
- * 用户管理 Zustand Store - 简化版
- */
-
-import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
-import { logger } from '../../utils/logger';
-import type { UserStoreState, UserStoreActions } from './types';
-import type { AntigravityCurrentUserInfo, BackupCurrentAccountResult } from '../../types/tauri';
+import {create} from 'zustand';
+import {invoke} from '@tauri-apps/api/core';
+import {logger} from '../utils/logger.ts';
+import type {AntigravityCurrentUserInfo, BackupCurrentAccountResult} from '../types/tauri.ts';
 import {AccountCommands} from '@/commands/AccountCommands.ts';
 import type {AntigravityAccount, AntigravityAuthInfo} from '@/commands/types/account.types.ts';
 
 // 常量定义
 const FILE_WRITE_DELAY_MS = 500; // 等待文件写入完成的延迟时间
 
+// Store 状态
+export interface UserStoreState {
+  users: AntigravityAccount[];
+  isLoading: boolean;
+}
+
+// Store Actions
+export interface UserStoreActions {
+  // 基础操作
+  delete: (email: string) => Promise<void>;
+  insertOrUpdateCurrent: () => Promise<void>;
+  switchUser: (email: string) => Promise<void>;
+  getCurrentUser: () => Promise<AntigravityAuthInfo | null>;
+
+  // 批量操作
+  clearAllUsers: () => Promise<void>;
+
+  // 查询
+  getUsers: () => Promise<AntigravityAccount[]>;
+  searchUsers: (keyword: string) => AntigravityAccount[];
+}
+
 // 创建 Store
-export const useUserManagement = create<UserStoreState & UserStoreActions>()((set, get) => ({
+export const useAntigravityAccount = create<UserStoreState & UserStoreActions>()((set, get) => ({
   // 初始状态
   users: [],
   isLoading: false,
 
   // ============ 基础操作 ============
-  deleteUser: async (email: string): Promise<void> => {
+  delete: async (email: string): Promise<void> => {
     logger.info('开始删除用户', { module: 'UserManagement', email });
 
     try {
@@ -42,7 +59,7 @@ export const useUserManagement = create<UserStoreState & UserStoreActions>()((se
     }
   },
 
-  addCurrentUser: async (): Promise<void> => {
+  insertOrUpdateCurrent: async (): Promise<void> => {
     logger.info('开始备份当前用户', { module: 'UserManagement' });
 
     try {

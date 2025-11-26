@@ -1,21 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, FolderOpen, FileCode, Zap, Monitor, VolumeX, Check, AlertCircle, Info, X } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
-import { getVersion } from '@tauri-apps/api/app';
-import { AntigravityPathService } from '../../services/antigravity-path-service';
-import {
-  BaseDialog,
-  BaseDialogContent,
-  BaseDialogHeader,
-  BaseDialogTitle,
-} from '@/components/base-ui/BaseDialog';
-import { BaseButton } from '@/components/base-ui/BaseButton';
-import { BaseSpinner } from '@/components/base-ui/BaseSpinner';
-import { SystemTrayService } from '../../services/system-tray-service';
-import { SilentStartService } from '../../services/silent-start-service';
-import { cn } from '@/utils/utils';
-import { logger } from '@/utils/logger';
+import React, {useEffect, useState} from 'react';
+import {AlertCircle, Check, FileCode, Info, Monitor, Settings, VolumeX} from 'lucide-react';
+import {open} from '@tauri-apps/plugin-dialog';
+import {getVersion} from '@tauri-apps/api/app';
+import {AntigravityPathService} from '../../services/antigravity-path-service';
+import {BaseDialog, BaseDialogContent, BaseDialogHeader, BaseDialogTitle,} from '@/components/base-ui/BaseDialog';
+import {BaseButton} from '@/components/base-ui/BaseButton';
+import {BaseSpinner} from '@/components/base-ui/BaseSpinner';
+import {SystemTrayService} from '../../services/system-tray-service';
+import {SilentStartService} from '../../services/silent-start-service';
+import {cn} from '@/utils/utils';
+import {logger} from '@/utils/logger';
 
 interface BusinessSettingsDialogProps {
   isOpen: boolean;
@@ -220,7 +214,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
             <p className="text-gray-400 mt-3 text-xs">加载中...</p>
           </div>
         ) : (
-          <div className="px-5 space-y-6">
+          <div className="p-5 space-y-6">
             {/* 消息提示 - 浮动式 */}
             {message && (
               <div className={cn(

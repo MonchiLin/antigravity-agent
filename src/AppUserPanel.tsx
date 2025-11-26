@@ -1,8 +1,8 @@
 import React, {useCallback, useEffect, useState} from "react";
 import type {AntigravityAccount} from "@/commands/types/account.types.ts";
 import BusinessUserDetail from "@/components/business/UserDetail.tsx";
-import {useUserManagement} from "@/modules/user-management/store.ts";
-import {useLanguageServerUserInfo} from "@/modules/use-language-server-user-info.ts";
+import {useAntigravityAccount} from "@/modules/use-antigravity-account.ts";
+import {useLanguageServerUserInfo} from "@/modules/use-language-server-user-info";
 import {useLanguageServerState} from "@/hooks/use-language-server-state.ts";
 import {BaseTooltip} from "@/components/base-ui/BaseTooltip.tsx";
 import BusinessActionButton from "@/components/business/ActionButton.tsx";
@@ -11,11 +11,11 @@ import {maskBackupFilename} from "@/utils/username-masking.ts";
 import {GlassProgressBar} from "@/components/base-ui/GlassProgressBar.tsx";
 import {BaseButton} from "@/components/base-ui/BaseButton.tsx";
 import BusinessConfirmDialog from "@/components/business/ConfirmDialog.tsx";
+import toast from 'react-hot-toast';
 
 export function AppUserPanel() {
   const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AntigravityAccount | null>(null);
-  const showStatus = (...args: any) => {}
 
   // 用户详情处理
   const handleUserClick = useCallback((user: AntigravityAccount) => {
@@ -28,7 +28,7 @@ export function AppUserPanel() {
     setSelectedUser(null);
   }, []);
 
-  const {users, getUsers, deleteUser, clearAllUsers, switchUser, getCurrentUser} = useUserManagement();
+  const antigravityAccount = useAntigravityAccount();
   // email
   const [currentUser, setCurrentUser] = useState<string>(null);
   const languageServerUserInfo = useLanguageServerUserInfo();
@@ -38,9 +38,9 @@ export function AppUserPanel() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        await getUsers();
+        await antigravityAccount.getUsers();
       } catch (error) {
-        showStatus(`获取用户列表失败: ${error}`, true);
+        toast.error(`获取用户列表失败: ${error}`);
       } finally {
       }
     };
@@ -50,15 +50,15 @@ export function AppUserPanel() {
 
   useEffect(() => {
     if (isLanguageServerStateInitialized) {
-      users.forEach(user => {
+      antigravityAccount.users.forEach(user => {
         languageServerUserInfo.fetchData(user)
       })
     }
-    getCurrentUser()
+    antigravityAccount.getCurrentUser()
       .then(user => {
         setCurrentUser(user.email)
       })
-  }, [users, isLanguageServerStateInitialized]);
+  }, [antigravityAccount.users, isLanguageServerStateInitialized]);
 
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -88,27 +88,27 @@ export function AppUserPanel() {
     if (!backupToDelete) return;
 
     try {
-      await deleteUser(backupToDelete);
-      showStatus(`备份 "${backupToDelete}" 删除成功`);
+      await antigravityAccount.delete(backupToDelete);
+      toast.success(`备份 "${backupToDelete}" 删除成功`);
       setDeleteDialogOpen(false);
       setBackupToDelete(null);
     } catch (error) {
-      showStatus(`删除备份失败: ${error}`, true);
+      toast.error(`删除备份失败: ${error}`);
     }
   };
 
   const handleSwitchAccount = async (backupName: string) => {
     try {
-      await switchUser(backupName);
-      showStatus(`已切换到用户: ${backupName}`);
+      await antigravityAccount.switchUser(backupName);
+      toast.success(`已切换到用户: ${backupName}`);
     } catch (error) {
-      showStatus(`切换用户失败: ${error}`, true);
+      toast.error(`切换用户失败: ${error}`);
     }
   };
 
   const handleClearAllBackups = () => {
-    if (users.length === 0) {
-      showStatus('当前没有用户备份可清空', true);
+    if (antigravityAccount.users.length === 0) {
+      toast.error('当前没有用户备份可清空');
       return;
     }
     setIsClearDialogOpen(true);
@@ -116,11 +116,11 @@ export function AppUserPanel() {
 
   const confirmClearAllBackups = async () => {
     try {
-      await clearAllUsers();
-      showStatus('清空所有备份成功');
+      await antigravityAccount.clearAllUsers();
+      toast.success('清空所有备份成功');
       setIsClearDialogOpen(false);
     } catch (error) {
-      showStatus(`清空备份失败: ${error}`, true);
+      toast.error(`清空备份失败: ${error}`);
     }
   };
 
@@ -129,7 +129,7 @@ export function AppUserPanel() {
       <section className="card section-span-full mt-4">
         <div className="flex justify-between items-center mb-4">
           <h2>用户管理</h2>
-          {users.length > 0 && (
+          {antigravityAccount.users.length > 0 && (
             <BaseTooltip content="清空所有备份" side="bottom">
               <BusinessActionButton
                 variant="destructive"
@@ -142,11 +142,11 @@ export function AppUserPanel() {
             </BaseTooltip>
           )}
         </div>
-        <div className={users.length === 0 ? "backup-list-empty" : "backup-list-vertical"}>
-          { users.length === 0 ? (
+        <div className={antigravityAccount.users.length === 0 ? "backup-list-empty" : "backup-list-vertical"}>
+          {antigravityAccount.users.length === 0 ? (
             <p className="text-light-text-muted">暂无用户</p>
           ) : (
-            users.map((user, index) => {
+            antigravityAccount.users.map((user, index) => {
               const avatarUrl = getAvatarUrl(user.profile_url);
               return (
                 <div
@@ -222,7 +222,7 @@ export function AppUserPanel() {
         isOpen={isClearDialogOpen}
         onOpenChange={setIsClearDialogOpen}
         title="确认清空所有备份"
-        description={`此操作将永久删除所有 ${users.length} 个用户备份文件，且无法恢复。请确认您要继续此操作吗？`}
+        description={`此操作将永久删除所有 ${antigravityAccount.users.length} 个用户备份文件，且无法恢复。请确认您要继续此操作吗？`}
         onConfirm={confirmClearAllBackups}
         onCancel={() => setIsClearDialogOpen(false)}
         variant="destructive"

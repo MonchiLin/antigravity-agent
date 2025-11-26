@@ -1,11 +1,11 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {useDevToolsShortcut} from './hooks/useDevToolsShortcut';
-import {useUserManagement} from './modules/user-management/store';
+import {useAntigravityAccount} from './modules/use-antigravity-account.ts';
 import {DATABASE_EVENTS, useDbMonitoringStore} from './modules/db-monitoring-store';
 import useConfigManager from './modules/config-management/useConfigStore';
 import {useAntigravityProcess} from './hooks/use-antigravity-process';
 import {useAntigravityIsRunning} from './hooks/useAntigravityIsRunning';
-import StatusNotification from './components/StatusNotification';
+import toast, {Toaster} from 'react-hot-toast';
 import Toolbar from './components/Toolbar';
 import BusinessSettingsDialog from './components/business/SettingsDialog';
 import PasswordDialog from './components/PasswordDialog';
@@ -15,21 +15,9 @@ import {useLanguageServerState} from "@/hooks/use-language-server-state.ts";
 import {logger} from './utils/logger';
 import {AppUserPanel} from "@/AppUserPanel.tsx";
 
-interface Status {
-  message: string;
-  isError: boolean;
-}
-
 function AppContent() {
   // ========== 应用状态 ==========
-  const [status, setStatus] = useState<Status>({message: '', isError: false});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // 状态提示
-  const showStatus = useCallback((message: string, isError: boolean = false): void => {
-    setStatus({message, isError});
-    setTimeout(() => setStatus({message: '', isError: false}), 5000);
-  }, []);
 
   const [passwordDialog, setPasswordDialog] = useState({
     isOpen: false,
@@ -60,19 +48,18 @@ function AppContent() {
   // 处理密码对话框取消
   const handlePasswordDialogCancel = useCallback(() => {
     closePasswordDialog();
-    setStatus({message: '操作已取消', isError: true});
+    toast.error('操作已取消');
   }, [closePasswordDialog]);
 
 
   // 配置管理
   const {isImporting, isExporting, isCheckingData, importConfig, exportConfig} = useConfigManager(
-    showStatus,
     showPasswordDialog,
     closePasswordDialog
   );
 
   // 进程管理
-  const { isProcessLoading, backupAndRestartAntigravity} = useAntigravityProcess(showStatus);
+  const {isProcessLoading, backupAndRestartAntigravity} = useAntigravityProcess();
 
   // 合并 loading 状态
   const loadingState = {
@@ -89,7 +76,6 @@ function AppContent() {
         isCheckingData={isCheckingData}
         onBackupAndRestart={backupAndRestartAntigravity}
         loadingState={loadingState}
-        showStatus={showStatus}
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
@@ -97,7 +83,35 @@ function AppContent() {
         <AppUserPanel/>
       </div>
 
-      <StatusNotification status={status}/>
+      <Toaster
+        position="bottom-right"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: '#363636',
+            color: '#fff',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            border: 'none',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
 
       <PasswordDialog
         isOpen={passwordDialog.isOpen}
@@ -124,21 +138,14 @@ function AppContent() {
 
 function App() {
   // ========== 应用状态 ==========
-  const [status, setStatus] = useState<Status>({message: '', isError: false});
   const [isDetecting, setIsDetecting] = useState(true);
   const languageServerState = useLanguageServerState();
 
   // ========== Hook 集成 ==========
   useDevToolsShortcut();
 
-  // 状态提示
-  const showStatus = useCallback((message: string, isError: boolean = false): void => {
-    setStatus({message, isError});
-    setTimeout(() => setStatus({message: '', isError: false}), 5000);
-  }, []);
-
   // 用户管理
-  const {addCurrentUser} = useUserManagement();
+  const {insertOrUpdateCurrent} = useAntigravityAccount();
 
   // 监听数据库变化事件
   const {initializeMonitoring, addListener} = useDbMonitoringStore();
@@ -148,7 +155,7 @@ function App() {
     initializeMonitoring();
 
     // 添加事件监听器
-    return addListener(DATABASE_EVENTS.DATA_CHANGED, addCurrentUser);
+    return addListener(DATABASE_EVENTS.DATA_CHANGED, insertOrUpdateCurrent);
   }, []);
 
   // 启动 Antigravity 进程状态自动检查

@@ -1,5 +1,6 @@
-import { invoke } from '@tauri-apps/api/core';
-import { logger } from '../utils/logger';
+import {invoke} from '@tauri-apps/api/core';
+import {logger} from '../utils/logger';
+import toast from 'react-hot-toast';
 
 /**
  * Antigravity 服务 - 处理 Antigravity 相关操作
@@ -8,15 +9,13 @@ export class AntigravityService {
   /**
    * 备份并重启Antigravity
    */
-  static async backupAndRestartAntigravity(
-    onStatusUpdate: (message: string, isError?: boolean) => void
-  ): Promise<void> {
+  static async backupAndRestartAntigravity(): Promise<void> {
     try {
       logger.info('开始执行备份并重启 Antigravity 流程', {
         module: 'AntigravityService',
         action: 'backup_and_restart_start'
       });
-      onStatusUpdate('正在关闭 Antigravity 进程...');
+      toast('正在关闭 Antigravity 进程...');
 
       logger.info('调用后端 backup_and_restart_antigravity 命令', {
         module: 'AntigravityService',
@@ -29,7 +28,7 @@ export class AntigravityService {
         result: result
       });
 
-      onStatusUpdate(result);
+      toast.success(result);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
-import { AntigravityService } from '../services/antigravity-service';
-import { logger } from '../utils/logger';
+import {useCallback, useState} from 'react';
+import {AntigravityService} from '../services/antigravity-service';
+import {logger} from '../utils/logger';
+import toast from 'react-hot-toast';
 
 interface UseAntigravityProcessResult {
     isProcessLoading: boolean;
@@ -11,9 +12,7 @@ interface UseAntigravityProcessResult {
  * Antigravity 进程管理 Hook
  * 负责处理登录新账户（备份并重启）操作
  */
-export function useAntigravityProcess(
-    showStatus: (message: string, isError?: boolean) => void,
-): UseAntigravityProcessResult {
+export function useAntigravityProcess(): UseAntigravityProcessResult {
     const [isProcessLoading, setIsProcessLoading] = useState(false);
 
     /**
@@ -33,13 +32,13 @@ export function useAntigravityProcess(
                 module: 'ProcessManager',
                 action: 'backup_and_restart_start'
             });
-            showStatus('正在备份当前用户并注销...');
+          toast.loading('正在备份当前用户并注销...');
 
             logger.info('调用 AntigravityService 备份重启服务', {
                 module: 'ProcessManager',
                 action: 'call_service'
             });
-            await AntigravityService.backupAndRestartAntigravity(showStatus);
+          await AntigravityService.backupAndRestartAntigravity();
 
             logger.info('备份并重启操作完成，准备刷新界面', {
                 module: 'ProcessManager',
@@ -61,7 +60,7 @@ export function useAntigravityProcess(
                 error: error instanceof Error ? error.message : String(error)
             });
             const errorMessage = error instanceof Error ? error.message : String(error);
-            showStatus(errorMessage, true);
+          toast.error(errorMessage);
         } finally {
             setIsProcessLoading(false);
             logger.debug('操作流程结束，重置加载状态', {
@@ -69,7 +68,7 @@ export function useAntigravityProcess(
                 action: 'reset_loading_state'
             });
         }
-    }, [showStatus]);
+    }, []);
 
     return {
         isProcessLoading,
