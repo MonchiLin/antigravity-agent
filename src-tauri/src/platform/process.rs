@@ -6,12 +6,18 @@ pub fn kill_antigravity_processes() -> Result<String, String> {
     let mut system = sysinfo::System::new_all();
     system.refresh_all();
 
+    let current_pid = std::process::id().to_string();
     let mut killed_processes = Vec::new();
 
     // 定义需要关闭的进程模式（按优先级排序）
     let process_patterns = get_antigravity_process_patterns();
 
     for (pid, process) in system.processes() {
+        // 跳过自身进程
+        if pid.to_string() == current_pid {
+            continue;
+        }
+
         let process_name = process.name();
         let process_cmd = process.cmd().join(" ");
 
@@ -56,9 +62,14 @@ pub fn is_antigravity_running() -> bool {
     let mut system = sysinfo::System::new_all();
     system.refresh_all();
 
+    let current_pid = std::process::id().to_string();
     let process_patterns = get_antigravity_process_patterns();
 
     for (pid, process) in system.processes() {
+        if pid.to_string() == current_pid {
+            continue;
+        }
+
         let process_name = process.name();
         let process_cmd = process.cmd().join(" ");
 
@@ -95,7 +106,6 @@ fn get_antigravity_process_patterns() -> Vec<ProcessPattern> {
             vec![
                 ProcessPattern::ExactName("Antigravity.exe"),
                 ProcessPattern::ExactName("Antigravity"),
-                ProcessPattern::Contains("Antigravity"),
                 ProcessPattern::CmdContains("Antigravity.exe"),
             ]
         }
