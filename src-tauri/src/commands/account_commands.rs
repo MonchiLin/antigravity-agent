@@ -465,59 +465,24 @@ pub async fn restore_antigravity_account(account_name: String) -> Result<String,
     crate::antigravity::restore::restore_all_antigravity_data(backup_file).await
 }
 
-/// 切换到 Antigravity 账户（调用 restore_antigravity_account）
+/// 切换到 Antigravity 账户
 #[tauri::command]
 pub async fn switch_to_antigravity_account(account_name: String) -> Result<String, String> {
     crate::log_async_command!("switch_to_antigravity_account", async {
-        // 1. 关闭 Antigravity 进程 (如果存在)
-        let kill_result = match crate::platform::kill_antigravity_processes() {
-            Ok(result) => {
-                if result.contains("not found") || result.contains("未找到") {
-                    tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
-                    "Antigravity 进程未运行".to_string()
-                } else {
-                    tracing::debug!(target: "account::switch::step1", result = %result, "进程关闭完成");
-                    result
-                }
-            }
-            Err(e) => {
-                if e.contains("not found") || e.contains("未找到") {
-                    tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
-                    "Antigravity 进程未运行".to_string()
-                } else {
-                    tracing::error!(target: "account::switch::step1", error = %e, "关闭进程时发生错误");
-                    return Err(format!("关闭进程时发生错误: {}", e));
-                }
-            }
+        use crate::antigravity::account_operations::{
+            unified_account_operation,
+            AccountOperationType,
+            format_switch_result,
         };
 
-        // 等待一秒确保进程完全关闭
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        let result = unified_account_operation(
+            AccountOperationType::Switch,
+            Some(account_name)
+        ).await?;
 
-        // 2. 恢复指定账户到 Antigravity 数据库
-        let restore_result = restore_antigravity_account(account_name.clone()).await?;
-        tracing::debug!(target: "account::switch::step2", result = %restore_result, "账户数据恢复完成");
-
-        // 等待一秒确保数据库操作完成
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-
-        // 3. 重新启动 Antigravity 进程
-        let start_result = crate::antigravity::starter::start_antigravity();
-        let start_message = match start_result {
-            Ok(result) => {
-                tracing::debug!(target: "account::switch::step3", result = %result, "Antigravity 启动成功");
-                result
-            }
-            Err(e) => {
-                tracing::warn!(target: "account::switch::step3", error = %e, "Antigravity 启动失败");
-                format!("启动失败: {}", e)
-            }
-        };
-
-        let final_message = format!("{} -> {} -> {}", kill_result, restore_result, start_message);
-
-        Ok(final_message)
+        Ok(format_switch_result(result))
     })
 }
+
 
 // 命令函数将在后续步骤中移动到这里
