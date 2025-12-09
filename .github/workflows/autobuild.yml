@@ -63,7 +63,7 @@ jobs:
             - **Intel Mac**: `Antigravity Agent_x86_64.dmg`
 
             ### Linux
-            - **AppImage**: `antigravity-agent.AppImage.nightly`
+            - **AppImage**: `antigravity-agent.AppImage.nightly` - 通用格式
             - **Debian/Ubuntu**: `antigravity-agent_amd64.deb`
 
             ---
@@ -236,7 +236,7 @@ jobs:
                   # 先检查文件名是否已经包含架构
                   if echo "$file" | grep -q "_${{ matrix.arch }}"; then
                     # 如果已经包含架构，只移除版本号
-                    new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+_(_${{ matrix.arch }})/Antigravity Agent\1/")
+                    new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+(_${{ matrix.arch }})/Antigravity Agent\1/")
                   else
                     # 如果不包含架构，移除版本号并添加架构
                     new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+/Antigravity Agent_${{ matrix.arch }}/")

@@ -1,10 +1,13 @@
-name: Release
+name: Release Build v2
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -14,16 +17,100 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Step 1: 先创建 Release（参考 autobuild.yml 的 prepare-release）
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v$VERSION"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: 'Antigravity Agent ${{ steps.version.outputs.tag }}'
+          body: |
+            ## 🚀 Antigravity Agent ${{ steps.version.outputs.tag }}
+
+            ### 📥 下载安装
+
+            #### Windows
+            - **安装版**（推荐）: `Antigravity Agent_${{ steps.version.outputs.version }}_x64-setup.exe` - 支持自动更新
+            - **便携版**: `Antigravity-Agent-x86_64-Portable.zip` - 解压即用，无需安装
+
+            #### macOS
+            - **Apple Silicon (M1/M2)**: `Antigravity Agent_${{ steps.version.outputs.version }}_aarch64.dmg`
+            - **Intel Mac**: `Antigravity Agent_${{ steps.version.outputs.version }}_x86_64.dmg`
+
+            #### Linux
+            - **AppImage**: `antigravity-agent_${{ steps.version.outputs.version }}_amd64.AppImage` - 通用格式，适用于所有发行版
+            - **Debian/Ubuntu**: `antigravity-agent_${{ steps.version.outputs.version }}_amd64.deb`
+
+            ---
+
+            ### 📋 更新日志
+
+            ${{ github.event.release.body || '请查看 [提交历史](https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.tag }}) 获取详细的更新内容。' }}
+
+            ---
+
+            ### ✨ 主要特性
+
+            - 🔐 **多账户管理**：轻松管理和切换多个 Antigravity 账户
+            - 📦 **一键备份**：自动备份账户配置，支持加密导出
+            - 🔄 **快速切换**：一键切换账户，自动重启应用
+            - 🎯 **跨设备同步**：加密配置文件，安全分享到其他设备
+            - 💾 **智能监控**：实时监控数据库变化，自动同步更新
+            - 🖥️ **系统集成**：原生系统托盘支持，后台静默运行
+
+            ---
+
+            ### 🔧 技术规格
+
+            - 基于最新版本的 Tauri 框架
+            - 原生性能，轻量级设计
+            - 跨平台支持（Windows、macOS、Linux）
+            - 端到端加密保护数据安全
+
+            ---
+
+            🙏 **感谢使用 Antigravity Agent！**
+
+            如果觉得这个工具有用，请给我们一个 ⭐️ 来支持我们的开发工作。
+
+            遇到问题？[提交 Issue](https://github.com/${{ github.repository }}/issues/new)
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Step 2: 并行构建和上传（参考 autobuild.yml 的 build job）
   build:
+    needs: prepare-release
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-13  # 统一使用 macos-13
+          - platform: macos-latest
             arch: aarch64
-            runs-on: macos-13
+            runs-on: macos-latest
             target: aarch64-apple-darwin
-          - platform: macos-latest  # Intel 构建使用 ARM runner 交叉编译
+          - platform: macos-latest
             arch: x86_64
             runs-on: macos-latest
             target: x86_64-apple-darwin
@@ -64,115 +151,164 @@ jobs:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
           cache-targets: true
-          shared-key: tauri-${{ matrix.platform }}
+          shared-key: tauri-${{ matrix.platform }}-release
 
-      - name: Sync node version
+      - name: Sync node version and setup cache
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+          cache: 'npm'
 
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Antigravity Agent v__VERSION__'
-          releaseBody: |
-            ## 📥 下载安装
-            
-            ### Windows
-            - **安装版**（推荐）: `Antigravity Agent_x.x.x_x64-setup.exe` - 支持自动更新
-            - **便携版**: `Antigravity-Agent-x86_64-Portable.zip` - 解压即用
-            
-            ### macOS
-            - **Apple Silicon**: `Antigravity Agent_aarch64.dmg`
-            - **Intel Mac**: `Antigravity Agent_x86_64.dmg`
-            
-            ### Linux
-            - **AppImage**: `antigravity-agent_x.x.x_amd64.AppImage` - 通用格式
-            - **Debian/Ubuntu**: `antigravity-agent_x.x.x_amd64.deb`
-            
-            ---
-            🙏 感谢使用！如果觉得有用，请给我们一个 ⭐️
-          releaseDraft: true
-          prerelease: false
-          includeDebug: false
-          includeRelease: true
-          args: --target ${{ matrix.target }}
-
-      - name: Rename macOS artifacts to include architecture
-        if: startsWith(matrix.platform, 'macos')
+      - name: Extract version from tag
+        id: version
         shell: bash
         run: |
-          # 为 macOS 更新包添加架构后缀以区分 ARM64 和 Intel
-          cd src-tauri/target/${{ matrix.target }}/release/bundle/macos/
-          if [ -f "Antigravity Agent.app.tar.gz" ]; then
-            mv "Antigravity Agent.app.tar.gz" "Antigravity Agent_${{ matrix.arch }}.app.tar.gz"
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v$VERSION"
+          else
+            echo "❌ This workflow should only be triggered by tags or manual dispatch"
+            exit 1
           fi
-          if [ -f "Antigravity Agent.app.tar.gz.sig" ]; then
-            mv "Antigravity Agent.app.tar.gz.sig" "Antigravity Agent_${{ matrix.arch }}.app.tar.gz.sig"
-          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Delete old macOS artifacts from release
-        if: startsWith(matrix.platform, 'macos')
+      - name: Build with Tauri (Release)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        continue-on-error: true
-        run: |
-          # 删除 tauri-action 自动上传的旧文件（不带架构后缀的版本）
-          gh release delete-asset ${{ github.ref_name }} "Antigravity Agent.app.tar.gz" --yes || true
-          gh release delete-asset ${{ github.ref_name }} "Antigravity Agent.app.tar.gz.sig" --yes || true
-          echo "✅ Deleted old macOS artifacts (if existed)"
-
-      - name: Upload renamed macOS artifacts
-        if: startsWith(matrix.platform, 'macos')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          RUST_LOG: debug
         shell: bash
         run: |
-          cd src-tauri/target/${{ matrix.target }}/release/bundle/macos/
-          if [ -f "Antigravity Agent_${{ matrix.arch }}.app.tar.gz" ]; then
-            gh release upload ${{ github.ref_name }} "Antigravity Agent_${{ matrix.arch }}.app.tar.gz" --clobber
+          echo "Building for target ${{ matrix.target }}..."
+          npm run tauri:build -- --target ${{ matrix.target }} --verbose
+
+      - name: Process and rename artifacts
+        shell: bash
+        run: |
+          BUNDLE_DIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          VERSION="${{ steps.version.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+          ARCH="${{ matrix.arch }}"
+
+          # macOS 处理
+          if [ "$PLATFORM" = "macos-latest" ]; then
+            if [ -d "$BUNDLE_DIR/dmg" ]; then
+              cd "$BUNDLE_DIR/dmg/"
+              for file in *.dmg; do
+                if [ -f "$file" ]; then
+                  new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+/Antigravity Agent_$VERSION/")
+                  new_name="${new_name%.dmg}_${ARCH}.dmg"
+                  if [ "$file" != "$new_name" ]; then
+                    mv "$file" "$new_name"
+                  fi
+                fi
+              done
+            fi
           fi
-          if [ -f "Antigravity Agent_${{ matrix.arch }}.app.tar.gz.sig" ]; then
-            gh release upload ${{ github.ref_name }} "Antigravity Agent_${{ matrix.arch }}.app.tar.gz.sig" --clobber
+
+          # Windows 处理
+          if [ "$PLATFORM" = "windows-latest" ]; then
+            if [ -d "$BUNDLE_DIR/msi" ]; then
+              cd "$BUNDLE_DIR/msi/"
+              for file in *.msi; do
+                if [ -f "$file" ]; then
+                  new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+/Antigravity Agent_$VERSION/")
+                  mv "$file" "$new_name" 2>/dev/null || true
+                fi
+              done
+            fi
+            if [ -d "$BUNDLE_DIR/nsis" ]; then
+              cd "$BUNDLE_DIR/nsis/"
+              for file in *.exe; do
+                if [ -f "$file" ]; then
+                  new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+/Antigravity Agent_$VERSION/")
+                  mv "$file" "$new_name" 2>/dev/null || true
+                fi
+              done
+            fi
           fi
-          echo "✅ Uploaded renamed macOS artifacts to ${{ github.ref_name }}"
+
+          # Linux 处理
+          if [ "$PLATFORM" = "ubuntu-latest" ]; then
+            if [ -d "$BUNDLE_DIR/appimage" ]; then
+              cd "$BUNDLE_DIR/appimage/"
+              for file in *.AppImage; do
+                if [ -f "$file" ]; then
+                  new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+_amd64/antigravity-agent_$VERSION\_amd64/")
+                  mv "$file" "${new_name%.AppImage}.AppImage" 2>/dev/null || true
+                fi
+              done
+            fi
+            if [ -d "$BUNDLE_DIR/deb" ]; then
+              cd "$BUNDLE_DIR/deb/"
+              for file in *.deb; do
+                if [ -f "$file" ]; then
+                  new_name=$(echo "$file" | sed -E "s/Antigravity Agent_[0-9]+\.[0-9]+\.[0-9]+_amd64/antigravity-agent_$VERSION\_amd64/")
+                  mv "$file" "$new_name.deb" 2>/dev/null || true
+                fi
+              done
+            fi
+          fi
 
       - name: Create Windows Portable Version
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          # 创建 Windows 便携版 (单个 exe 压缩包)
           $exePath = "src-tauri\target\${{ matrix.target }}\release\antigravity-agent.exe"
           $outputDir = "portable-package"
-          $zipPath = "src-tauri\target\${{ matrix.target }}\release\bundle\Antigravity-Agent-${{ matrix.arch }}-Portable.zip"
-          
+          $bundleDir = "src-tauri\target\${{ matrix.target }}\release\bundle"
+          $zipPath = "$bundleDir\Antigravity-Agent-${{ matrix.arch }}-Portable.zip"
+
           if (Test-Path $exePath) {
             New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
             Copy-Item $exePath "$outputDir\Antigravity Agent.exe"
             Compress-Archive -Path "$outputDir\*" -DestinationPath $zipPath -Force
             Remove-Item -Recurse -Force $outputDir
-            Write-Host "✅ Created portable version: $zipPath"
-          } else {
-            Write-Host "⚠️ Binary not found at: $exePath"
           }
 
-      - name: Upload Windows Portable to Release
-        if: matrix.platform == 'windows-latest'
+      # 完全复制 autobuild.yml 的上传逻辑
+      - name: Upload all artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
+        shell: bash
         run: |
-          $zipPath = "src-tauri\target\${{ matrix.target }}\release\bundle\Antigravity-Agent-${{ matrix.arch }}-Portable.zip"
-          if (Test-Path $zipPath) {
-            gh release upload ${{ github.ref_name }} $zipPath --clobber
-            Write-Host "✅ Uploaded portable version to release"
-          }
+          BUNDLE_DIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+
+          if [ -d "$BUNDLE_DIR" ]; then
+            # 完全参考 autobuild.yml 的文件过滤
+            find "$BUNDLE_DIR" -type f \( -name "*.msi" -o -name "*.exe" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.sig" -o -name "*.dmg" \) | while read file; do
+              echo "Uploading: $file"
+              gh release upload ${{ steps.version.outputs.tag }} "$file" --clobber --repo "${{ github.repository }}"
+            done
+          fi
+
+  # Step 3: 触发 updater
+  trigger-updater:
+    needs: [prepare-release, build]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Extract version for updater
+        id: updater-version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v$VERSION"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate updater configuration
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          event-type: generate-updater
+          client-payload: '{"tag": "${{ steps.updater-version.outputs.tag }}"}'
