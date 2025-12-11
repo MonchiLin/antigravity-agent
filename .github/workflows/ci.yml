@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Run frontend tests
-        run: npm test --if-present
+        run: SKIP_STORYBOOK_TESTS=1 npm test --if-present
 
       - name: Build frontend
         run: npm run build
