@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {EyeOff, FileCode, Monitor, Settings, VolumeX} from 'lucide-react';
+import {EyeOff, FileCode, FolderOpen, Monitor, Settings, VolumeX} from 'lucide-react';
 import {open} from '@tauri-apps/plugin-dialog';
 import {getVersion} from '@tauri-apps/api/app';
 import {BaseButton} from '@/components/base-ui/BaseButton';
@@ -7,6 +7,7 @@ import {cn} from '@/lib/utils.ts';
 import {PlatformCommands} from "@/commands/PlatformCommands.ts";
 import {Modal} from "antd";
 import {useAppSettings} from "@/modules/use-app-settings.ts";
+import {LoggingCommands} from "@/commands/LoggingCommands.ts";
 
 interface BusinessSettingsDialogProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
   onOpenChange
 }) => {
   const [execPath, setExecPath] = useState<string>('');
+  const [logDirPath, setLogDirPath] = useState<string>('');
   const [appVersion, setAppVersion] = useState<string>('');
 
   
@@ -35,6 +37,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadCurrentPaths();
+      loadLogDirectoryPath();
       loadAppVersion();
     }
   }, [isOpen]);
@@ -56,6 +59,15 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     }
 
     setExecPath(finalExecPath || '未设置');
+  };
+
+  const loadLogDirectoryPath = async () => {
+    try {
+      const logPath = await LoggingCommands.getLogDirectoryPath();
+      setLogDirPath(logPath || '未设置');
+    } catch (_error) {
+      setLogDirPath('未设置');
+    }
   };
 
   const handleBrowseExecPath = async () => {
@@ -82,6 +94,10 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     }
   };
 
+  const handleOpenLogDirectory = async () => {
+    await LoggingCommands.openLogDirectory();
+  };
+
   return (
     <Modal
       open={isOpen}
@@ -101,26 +117,21 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
         {/* 路径设置组 */}
         <div className="space-y-4">
           <div className="space-y-3">
-            <div className="group">
-              <label
-                className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 block px-1">Antigravity
-                可执行文件</label>
-              <div className="flex gap-2">
-                <div
-                  className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all transition-colors group-hover:border-gray-300 dark:group-hover:border-gray-700">
-                  {execPath}
-                </div>
-                <BaseButton
-                  variant="outline"
-                  size="icon"
-                  className="h-[34px] w-[34px] shrink-0 border-gray-200 dark:border-gray-800"
-                  onClick={handleBrowseExecPath}
-                  title="Antigravity 可执行文件"
-                >
-                  <FileCode className="h-4 w-4 text-gray-500"/>
-                </BaseButton>
-              </div>
-            </div>
+            <PathSettingRow
+              label="Antigravity 可执行文件"
+              value={execPath}
+              actionTitle="Antigravity 可执行文件"
+              onAction={handleBrowseExecPath}
+              actionIcon={<FileCode className="h-4 w-4 text-gray-500"/>}
+            />
+
+            <PathSettingRow
+              label="日志目录"
+              value={logDirPath}
+              actionTitle="打开日志目录"
+              onAction={handleOpenLogDirectory}
+              actionIcon={<FolderOpen className="h-4 w-4 text-gray-500"/>}
+            />
           </div>
         </div>
 
@@ -165,6 +176,42 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
     </Modal>
   );
 };
+
+const PathSettingRow = ({
+  label,
+  value,
+  actionTitle,
+  onAction,
+  actionIcon,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  actionTitle: string;
+  onAction: () => void;
+  actionIcon: React.ReactNode;
+}) => (
+  <div className="group">
+    <label
+      className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 block px-1">
+      {label}
+    </label>
+    <div className="flex gap-2">
+      <div
+        className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all transition-colors group-hover:border-gray-300 dark:group-hover:border-gray-700">
+        {value}
+      </div>
+      <BaseButton
+        variant="outline"
+        size="icon"
+        className="h-[34px] w-[34px] shrink-0 border-gray-200 dark:border-gray-800"
+        onClick={onAction}
+        title={actionTitle}
+      >
+        {actionIcon}
+      </BaseButton>
+    </div>
+  </div>
+);
 
 // 内部组件：设置开关项
 const SettingToggle = ({

@@ -66,3 +66,27 @@ pub async fn write_frontend_log(log_entry: serde_json::Value) -> Result<(), Stri
 
     Ok(())
 }
+
+/// 获取日志目录路径
+#[tauri::command]
+pub async fn get_log_directory_path() -> Result<String, String> {
+    crate::log_async_command!("get_log_directory_path", async {
+        let log_dir = crate::directories::get_log_directory();
+
+        Ok(log_dir.display().to_string())
+    })
+}
+
+/// 打开日志目录
+/// 在系统文件管理器中打开日志目录（例如 Windows 资源管理器 / macOS Finder / Linux 文件管理器）
+#[tauri::command]
+pub async fn open_log_directory() -> Result<(), String> {
+    crate::log_async_command!("open_log_directory", async {
+        let log_dir = crate::directories::get_log_directory();
+
+        tauri_plugin_opener::open_path(&log_dir, None::<&str>)
+            .map_err(|e| format!("打开日志目录失败: {}", e))?;
+
+        Ok(())
+    })
+}

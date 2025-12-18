@@ -14,6 +14,7 @@ tauri-plugin-updater = "2.9.0"
 tauri-plugin-process = "2.3.1"
 tauri-plugin-http = "2.5.4"
 tauri-plugin-os = "2"
+tauri-plugin-opener = "2.5.2"
 
 # Tracing 生态系统
 tracing = "0.1.43"

@@ -134,6 +134,8 @@ fn main() {
             encrypt_config_data,
             write_text_file,
             write_frontend_log,
+            get_log_directory_path,
+            open_log_directory,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
