@@ -11,10 +11,16 @@ fn clear_database(db_path: &Path, db_name: &str) -> Result<usize, String> {
     tracing::info!(target: "cleanup::database", db_name = %db_name, "开始清理数据库");
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    // 仅删除 jetskiStateSync.agentManagerInitState
+    // 删除 jetskiStateSync.agentManagerInitState
     let key = "jetskiStateSync.agentManagerInitState";
     let rows = conn
         .execute("DELETE FROM ItemTable WHERE key = ?", [key])
+        .unwrap_or(0);
+
+    // 根据用户报告, 有些情况不删除 antigravityAuthStatus, Antigravity 不会生成新的
+    let antigravity_auth_status_key = "antigravityAuthStatus";
+    let antigravity_auth_status_rows = conn
+        .execute("DELETE FROM ItemTable WHERE key = ?", [antigravity_auth_status_key])
         .unwrap_or(0);
 
     // 把 antigravityOnboarding 设置为布尔值 true（写为字符串 "true"） 以跳过首次启动引导
@@ -30,7 +36,7 @@ fn clear_database(db_path: &Path, db_name: &str) -> Result<usize, String> {
         tracing::debug!(target: "cleanup::database", key = %key, "已删除字段");
     }
 
-    Ok(rows + onboarding_rows)
+    Ok(rows + onboarding_rows + antigravity_auth_status_rows)
 }
 
 pub async fn clear_all_antigravity_data() -> Result<String, String> {

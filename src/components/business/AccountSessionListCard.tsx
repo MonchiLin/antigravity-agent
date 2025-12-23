@@ -63,6 +63,13 @@ const tierVisualStyles: Record<UserTier, TierVisualStyles> = {
   },
 };
 
+const unknownStyle: TierVisualStyles = {
+  background: 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px)',
+  borderColor: '#cbd5e1',
+  boxShadow: 'none',
+  hoverBoxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+};
+
 const tierBadgeMap: Record<UserTier, React.ReactNode> = {
   "free-tier": <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md leading-none border border-slate-200 shadow-sm">Free</span>,
   "g1-pro-tier": <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-md leading-none border border-amber-200/60 flex items-center gap-0.5 shadow-sm"><Crown size={10} className="fill-current" />Pro</span>,
@@ -104,10 +111,11 @@ const childVariants: Variants = {
 export function AccountSessionListCard(props: UserSessionCardProps) {
   let { tier } = props;
   const unknownTier = !["free-tier", "g1-pro-tier", "g1-ultra-tier"].includes(tier);
-  if (unknownTier) {
-    tier = "free-tier";
-  }
-  const { boxShadow, hoverBoxShadow, ...otherStyles } = tierVisualStyles[tier];
+
+  // 如果是未知层级，使用专门定义的未知样式，否则使用对应层级的样式
+  const currentStyles = unknownTier ? unknownStyle : tierVisualStyles[tier];
+
+  const { boxShadow, hoverBoxShadow, ...otherStyles } = currentStyles;
 
   // --- 1. 聚光灯 (Spotlight) 逻辑 ---
   const mouseX = useMotionValue(0);
@@ -210,7 +218,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
                 </h2>
               </Tooltip>
               <div className="mt-0.5 shrink-0">
-                {tierBadgeMap[tier]}
+                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md leading-none border border-gray-200 shadow-sm">Unknown</span>}
               </div>
             </div>
             <Tooltip title={props.email} styles={{ container: tooltipInnerStyle }}>
@@ -305,7 +313,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           <Tooltip title={
             <div className="flex flex-col gap-0.5">
               <span>
-                当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级 <span className="font-mono bg-white/10 px-1 rounded">{props.tier}</span>
+                当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级 <span className="font-mono bg-white/10 px-1 rounded">[{props.tier}]</span>
               </span>
               <span>
                 这不是您的问题, 为了解决这个问题, 您可以将该提示截图 <a href="https://github.com/MonchiLin/antigravity-agent/issues" target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200 underline decoration-auto underline-offset-2">提供给开发者</a>

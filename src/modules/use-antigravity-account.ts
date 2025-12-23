@@ -55,9 +55,10 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
     try {
       // 1. 获取当前 Antigravity 用户信息
       const currentInfo = await AccountCommands.getCurrentAntigravityAccount();
+      console.log("insertOrUpdateCurrentAccount", currentInfo)
       // 2. 检查是否有有效的用户信息（通过API Key或用户状态判断）
       if (currentInfo?.auth.access_token) {
-        // 3. 执行备份操作
+        // 3. 执行保存操作
         await AccountCommands.saveAntigravityCurrentAccount();
 
         // 4. 等待文件写入完成

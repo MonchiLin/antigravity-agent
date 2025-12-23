@@ -118,3 +118,12 @@ export const HighUsage: Story = {
     isCurrentUser: false,
   },
 };
+
+// 示例 5: 未知等级 (Unknown Tier) - 触发兜底逻辑
+export const UnknownTier: Story = {
+  args: {
+    ...mockSessionItems[0],
+    tier: 'future-tier-v2' as any, // 强制转换为任意值以触发 unknownTier = true
+    isCurrentUser: false,
+  },
+};

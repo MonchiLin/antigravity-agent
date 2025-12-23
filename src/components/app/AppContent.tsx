@@ -167,7 +167,7 @@ export function AppContent() {
       userAvatar: accountAdditionDatum?.userAvatar ?? "",
       apiKey: account.auth.access_token,
       // 似乎在某些情况下 plan 可能为 null，这里添加 null 检查
-      tier: (account.context.plan?.slug ?? 'free-tier') as UserTier,
+      tier: (account.context.plan?.slug ?? '') as UserTier,
     }
   })
 
