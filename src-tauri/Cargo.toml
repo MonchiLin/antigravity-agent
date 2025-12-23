@@ -33,6 +33,9 @@ regex = "1.10"
 sysinfo = "0.30"
 prost = "0.12"
 log = "0.4.28"
+actix-web = "4.12.1"
+actix-cors = "0.7.1"
+parking_lot = "0.12.5"
 
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }

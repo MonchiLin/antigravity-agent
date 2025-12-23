@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
-import {AntigravityAccount} from "@/commands/types/account.types.ts";
+import { universalInvoke } from '@/lib/invoke-adapter';
+import { AntigravityAccount } from "@/commands/types/account.types.ts";
 
 /**
  * Antigravity 账户管理命令
@@ -10,7 +10,7 @@ export class AccountCommands {
    * @returns 账户认证信息，包含邮箱、数据库路径等
    */
   static async getCurrentAntigravityAccount(): Promise<AntigravityAccount> {
-    return invoke('get_current_antigravity_account_info');
+    return universalInvoke('get_current_antigravity_account_info');
   }
 
   /**
@@ -18,7 +18,7 @@ export class AccountCommands {
    * @returns 账户列表
    */
   static async getAntigravityAccounts(): Promise<AntigravityAccount[]> {
-    return invoke('get_antigravity_accounts');
+    return universalInvoke('get_antigravity_accounts');
   }
 
   /**
@@ -26,7 +26,7 @@ export class AccountCommands {
    * @returns 备份结果消息
    */
   static async saveAntigravityCurrentAccount(): Promise<string> {
-    return invoke('save_antigravity_current_account');
+    return universalInvoke('save_antigravity_current_account');
   }
 
   /**
@@ -35,7 +35,7 @@ export class AccountCommands {
    * @returns 切换结果消息
    */
   static async switchToAntigravityAccount(accountName: string): Promise<string> {
-    return invoke('switch_to_antigravity_account', { accountName: accountName });
+    return universalInvoke('switch_to_antigravity_account', { accountName: accountName });
   }
 
   /**
@@ -43,6 +43,6 @@ export class AccountCommands {
    * @returns 清除结果消息
    */
   static async clearAllData(): Promise<string> {
-    return invoke('clear_all_antigravity_data');
+    return universalInvoke('clear_all_antigravity_data');
   }
 }

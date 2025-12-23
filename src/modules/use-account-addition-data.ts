@@ -33,6 +33,7 @@ export interface AccountAdditionData {
 export const useAccountAdditionData = create<State & Actions>((setState, getState) => ({
   data: {},
   update: async (antigravityAccount: AntigravityAccount) => {
+    console.log(antigravityAccount)
     let codeAssistResponse: CloudCodeAPITypes.LoadCodeAssistResponse | CloudCodeAPITypes.ErrorResponse = null
 
     try {

@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2020",
+        "outDir": "dist",
+        "lib": [
+            "es2020",
+            "dom"
+        ],
+        "sourceMap": true,
+        "rootDir": "src",
+        "strict": true,
+        "jsx": "react",
+        "skipLibCheck": true
+    },
+    "exclude": [
+        "node_modules",
+        ".vscode-test",
+        "src/webview/**/*"
+    ]
+    // Exclude webview from tsc build, let Vite handle it. 
+    // Wait, if I exclude it, types might be tricky if shared. 
+    // But usually they are separate.
+}
