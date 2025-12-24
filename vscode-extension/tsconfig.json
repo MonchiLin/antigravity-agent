@@ -8,10 +8,13 @@
             "dom"
         ],
         "sourceMap": true,
-        "rootDir": "src",
-        "strict": true,
-        "jsx": "react",
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "../src/*"
+            ]
+        }
     },
     "exclude": [
         "node_modules",

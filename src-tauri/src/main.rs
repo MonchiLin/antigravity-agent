@@ -137,6 +137,7 @@ fn main() {
             clear_all_backups,
             // 账户基础命令
             get_antigravity_accounts,
+            get_account_metrics,
             get_current_antigravity_account_info,
             save_antigravity_current_account,
             restore_antigravity_account,

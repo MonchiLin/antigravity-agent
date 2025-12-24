@@ -3,10 +3,9 @@ use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde_json::json;
 use std::sync::Arc;
-use tauri::Manager;
 
-// GET /api/status
-#[get("/api/status")]
+// GET /api/is_antigravity_running
+#[get("/api/is_antigravity_running")]
 async fn status() -> impl Responder {
     HttpResponse::Ok().json(json!({
         "status": "running",
@@ -14,8 +13,8 @@ async fn status() -> impl Responder {
     }))
 }
 
-// GET /api/accounts
-#[get("/api/accounts")]
+// GET /api/get_antigravity_accounts
+#[get("/api/get_antigravity_accounts")]
 async fn get_accounts(data: web::Data<Arc<parking_lot::Mutex<AppState>>>) -> impl Responder {
     tracing::debug!("HTTP: Getting accounts");
     
@@ -57,21 +56,58 @@ async fn get_accounts(data: web::Data<Arc<parking_lot::Mutex<AppState>>>) -> imp
 
 #[derive(serde::Deserialize)]
 struct SwitchAccountRequest {
-    email: String,
+    account_name: String,
 }
 
-#[post("/api/account/switch")]
+#[post("/api/switch_to_antigravity_account")]
 async fn switch_account(
     req: web::Json<SwitchAccountRequest>,
 ) -> impl Responder {
-    tracing::info!("HTTP Request: Switch to account {}", req.email);
+    tracing::info!("HTTP Request: Switch to account {}", req.account_name);
 
-    match crate::commands::account_commands::switch_to_antigravity_account(req.email.clone()).await {
+    match crate::commands::account_commands::switch_to_antigravity_account(req.account_name.clone()).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
         Err(e) => {
             tracing::error!("Failed to switch account via HTTP: {}", e);
             HttpResponse::InternalServerError().json(json!({ "error": e }))
         }
+    }
+}
+
+/// 使用 Logic 函数处理 HTTP 请求
+#[derive(serde::Deserialize)]
+struct GetMetricRequest {
+    email: String,
+}
+
+#[post("/api/get_account_metrics")]
+async fn get_account_metrics_http(
+    data: web::Data<Arc<parking_lot::Mutex<AppState>>>,
+    req: web::Json<GetMetricRequest>,
+) -> impl Responder {
+    tracing::info!("HTTP: Getting account metrics for {}", req.email);
+
+    // Get config dir fast and drop lock
+    let config_dir = {
+        let state = data.lock();
+        state.config_dir.clone()
+    };
+    
+    match crate::commands::account_metrics_commands::get_metrics_logic(&config_dir, req.email.clone()).await {
+        Ok(metrics) => HttpResponse::Ok().json(metrics),
+        Err(e) => {
+            tracing::error!("Failed to get metrics via HTTP: {}", e);
+            HttpResponse::InternalServerError().json(json!({ "error": e }))
+        }
+    }
+}
+
+#[get("/api/get_current_antigravity_account_info")]
+async fn get_current_account_http() -> impl Responder {
+    tracing::info!("HTTP: Getting current account");
+    match crate::commands::account_commands::get_current_antigravity_account_info().await {
+        Ok(json) => HttpResponse::Ok().json(json),
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -93,6 +129,8 @@ pub fn init(app_handle: tauri::AppHandle, state: Arc<parking_lot::Mutex<AppState
                     .service(status)
                     .service(get_accounts)
                     .service(switch_account)
+                    .service(get_account_metrics_http)
+                    .service(get_current_account_http)
             })
             .bind(("127.0.0.1", 18888));
 

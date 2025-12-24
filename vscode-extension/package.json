@@ -3,6 +3,7 @@
     "displayName": "Antigravity Agent",
     "description": "Manage your Antigravity accounts directly from VS Code",
     "version": "0.0.1",
+    "icon": "images/icon.png",
     "type": "module",
     "engines": {
         "vscode": "^1.90.0"
@@ -10,49 +11,21 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
-    "main": "./dist/extension.js",
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension/extension.js",
     "contributes": {
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "antigravity-sidebar",
-                    "title": "Antigravity",
-                    "icon": "resources/antigravity-icon.svg"
-                }
-            ]
-        },
-        "views": {
-            "antigravity-sidebar": [
-                {
-                    "type": "webview",
-                    "id": "antigravity-view",
-                    "name": "Accounts"
-                }
-            ]
-        },
         "commands": [
             {
-                "command": "antigravity.refresh",
-                "title": "Refresh Accounts",
-                "icon": {
-                    "light": "resources/refresh-light.svg",
-                    "dark": "resources/refresh-dark.svg"
-                }
+                "command": "antigravity.openDialog",
+                "title": "Open Accounts Dashboard"
             }
-        ],
-        "menus": {
-            "view/title": [
-                {
-                    "command": "antigravity.refresh",
-                    "when": "view == antigravity-view",
-                    "group": "navigation"
-                }
-            ]
-        }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
+        "dev": "vite",
         "compile": "vite build",
         "watch": "vite build --watch",
         "package": "vite build",
@@ -60,26 +33,32 @@
         "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.18",
+        "@tailwindcss/vite": "^4.1.18",
         "@tomjs/vite-plugin-vscode": "^5.2.0",
         "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.1",
-        "@types/node": "20.2.5",
-        "@types/react": "^18.2.0",
-        "@types/react-dom": "^18.2.0",
-        "@types/vscode": "^1.90.0",
-        "@typescript-eslint/eslint-plugin": "^5.59.8",
-        "@typescript-eslint/parser": "^5.59.8",
-        "@vitejs/plugin-react": "^4.0.0",
-        "@vscode/test-electron": "^2.3.2",
-        "eslint": "^8.41.0",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^25.0.3",
+        "@types/react": "^18.3.27",
+        "@types/react-dom": "^18.3.7",
+        "@types/vscode": "^1.107.0",
+        "@typescript-eslint/eslint-plugin": "^5.62.0",
+        "@typescript-eslint/parser": "^5.62.0",
+        "@vitejs/plugin-react": "^5.1.2",
+        "@vscode/test-electron": "^2.5.2",
+        "autoprefixer": "^10.4.23",
+        "eslint": "^8.57.1",
         "glob": "^8.1.0",
-        "mocha": "^10.2.0",
-        "typescript": "^5.1.3",
-        "vite": "^4.4.0"
+        "mocha": "^10.8.2",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.18",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.0"
     },
     "dependencies": {
+        "@vscode/codicons": "^0.0.44",
         "@vscode/webview-ui-toolkit": "^1.4.0",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
     }
 }

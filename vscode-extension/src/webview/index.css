@@ -1,0 +1,47 @@
+@import "@vscode/codicons/dist/codicon.css";
+@import "tailwindcss";
+
+/* VS Code Webview 基础样式 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+/* VS Code 颜色变量映射 */
+@theme {
+    --color-vscode-bg: var(--vscode-editor-background);
+    --color-vscode-fg: var(--vscode-foreground);
+    --color-vscode-border: var(--vscode-widget-border);
+    --color-vscode-input-bg: var(--vscode-input-background);
+    --color-vscode-button-bg: var(--vscode-button-background);
+    --color-vscode-button-fg: var(--vscode-button-foreground);
+    --color-vscode-error: var(--vscode-errorForeground);
+    --color-vscode-success: var(--vscode-charts-green);
+    --color-vscode-warning: var(--vscode-charts-yellow);
+    --color-vscode-info: var(--vscode-charts-blue);
+    --color-vscode-quote-bg: var(--vscode-textBlockQuote-background);
+    --color-vscode-quote-border: var(--vscode-textBlockQuote-border);
+}
+
+/* 自定义组件样式 */
+@utility card {
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+}
+
+@utility card-active {
+    border-color: var(--vscode-charts-blue);
+}
+
+@utility quota-section {
+    background-color: var(--vscode-textBlockQuote-background);
+    border-left: 2px solid var(--vscode-textBlockQuote-border);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}

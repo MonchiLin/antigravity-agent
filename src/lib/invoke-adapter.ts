@@ -21,38 +21,38 @@ export async function universalInvoke<T>(cmd: string, args?: Record<string, any>
   }
 }
 
+// 需要 POST 方法的命令列表
+const POST_COMMANDS = new Set([
+  'switch_to_antigravity_account',
+  'get_account_metrics',
+]);
+
+// 在 HTTP 模式下忽略的命令（返回 undefined）
+const IGNORED_COMMANDS = new Set([
+  'write_frontend_log',
+  'open_log_directory',
+  'get_log_directory_path',
+  'write_text_file',
+]);
+
 /**
  * HTTP 调用实现
- * 将 Tauri 命令映射到 HTTP 路由
+ * 直接使用命令名作为路由路径，参数透传
  */
 async function httpInvoke<T>(cmd: string, args?: Record<string, any>): Promise<T> {
-  let url = '';
-  let method = 'GET';
-  let body: any = undefined;
-
-  // 简单的路由映射表
-  switch (cmd) {
-    case 'get_antigravity_accounts':
-      url = `${SERVER_URL}/accounts`;
-      method = 'GET';
-      break;
-    case 'switch_to_antigravity_account':
-      url = `${SERVER_URL}/account/switch`;
-      method = 'POST';
-      // 注意：Tauri 的参数通常是平铺的，而我们的 API 可能期望一个对象
-      // switch_account API 期望 { email: string }
-      // Tauri command switch_to_antigravity_account(account_name: String)
-      // 所以我们需要做字段映射
-      body = { email: args?.account_name };
-      break;
-    case 'is_antigravity_running':
-       // 这是一个简单的 GET，但服务器如果有对应的 /status 也可以
-       url = `${SERVER_URL}/status`;
-       break;
-    default:
-      console.warn(`Command "${cmd}" is not supported via HTTP yet.`);
-      throw new Error(`Command "${cmd}" not supported via HTTP`);
+  // 处理忽略的命令
+  if (IGNORED_COMMANDS.has(cmd)) {
+    if (cmd === 'write_frontend_log') {
+      console.log('[FrontendLog]', args?.logEntry);
+    } else {
+      console.warn(`[InvokeAdapter] Command "${cmd}" ignored in HTTP mode.`);
+    }
+    return undefined as unknown as T;
   }
+
+  // 直接使用命令名作为路由
+  const url = `${SERVER_URL}/${cmd}`;
+  const method = POST_COMMANDS.has(cmd) ? 'POST' : 'GET';
 
   const options: RequestInit = {
     method,
@@ -61,8 +61,9 @@ async function httpInvoke<T>(cmd: string, args?: Record<string, any>): Promise<T
     },
   };
 
-  if (body) {
-    options.body = JSON.stringify(body);
+  // POST 请求透传参数
+  if (method === 'POST' && args) {
+    options.body = JSON.stringify(args);
   }
 
   try {
