@@ -99,27 +99,59 @@ jobs:
           cache: 'npm'
           cache-dependency-path: vscode-extension/package-lock.json
 
+      - name: Get Version
+        id: version
+        working-directory: ./vscode-extension
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📍 Using extension version $VERSION"
+
       - name: Install dependencies
         working-directory: ./vscode-extension
         run: npm ci
 
       - name: Build and Package Extension
         working-directory: ./vscode-extension
-        run: npx @vscode/vsce package --out ./antigravity-vscode-0.0.1.vsix
+        run: npx @vscode/vsce package --out ./antigravity-vscode-${{ steps.version.outputs.version }}.vsix
 
       - name: Upload Extension to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload plugin-debug vscode-extension/antigravity-vscode-0.0.1.vsix --clobber --repo "${{ github.repository }}"
+          gh release upload plugin-debug vscode-extension/antigravity-vscode-${{ steps.version.outputs.version }}.vsix --clobber --repo "${{ github.repository }}"
 
       - name: Publish to Open VSX
         working-directory: ./vscode-extension
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [ -n "$OVSX_PAT" ]; then
-            npx ovsx publish ./antigravity-vscode-0.0.1.vsix --pat "$OVSX_PAT"
-          else
+          if [ -z "$OVSX_PAT" ]; then
             echo "⚠️ OVSX_PAT secret not found, skipping Open VSX publish"
+            exit 0
+          fi
+
+          PACKAGE_NAME="antigravity.antigravity-vscode"
+          echo "🔍 Checking Open VSX version for $PACKAGE_NAME..."
+          
+          # Fetch remote info, mute stderr in case it doesn't exist
+          REMOTE_INFO=$(npx ovsx get "$PACKAGE_NAME" 2>/dev/null || echo "")
+          
+          if [ -z "$REMOTE_INFO" ]; then
+             echo "⚠️ Package not found on Open VSX. Assuming first publish."
+             REMOTE_VERSION="0.0.0"
+          else
+             # Extract version from output like "Version: 1.2.3"
+             REMOTE_VERSION=$(echo "$REMOTE_INFO" | grep -i "Version:" | awk '{print $2}' | tr -d '[:space:]')
+          fi
+          
+          echo "🔹 Local Version: $VERSION"
+          echo "🔹 Remote Version: $REMOTE_VERSION"
+          
+          if [ "$VERSION" != "$REMOTE_VERSION" ]; then
+            echo "🚀 Versions differ. Publishing $VERSION..."
+            npx ovsx publish ./antigravity-vscode-$VERSION.vsix --pat "$OVSX_PAT"
+          else
+            echo "✨ Version $VERSION already exists on Open VSX. Skipping publish."
           fi
