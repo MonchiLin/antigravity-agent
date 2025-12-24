@@ -64,6 +64,7 @@
         "@vscode/codicons": "^0.0.44",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "react": "^18.3.1",
-        "react-dom": "^18.3.1"
+        "react-dom": "^18.3.1",
+        "zustand": "^5.0.9"
     }
 }
