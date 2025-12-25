@@ -1,15 +1,15 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BusinessUserDetail from "@/components/business/AccountDetailModal.tsx";
-import {useAntigravityAccount, useCurrentAntigravityAccount} from "@/modules/use-antigravity-account.ts";
-import {useAccountAdditionData, UserTier} from "@/modules/use-account-addition-data.ts";
-import {useTrayMenu} from "@/hooks/use-tray-menu.ts";
-import {Modal} from 'antd';
+import { useAntigravityAccount, useCurrentAntigravityAccount } from "@/modules/use-antigravity-account.ts";
+import { useAccountAdditionData, UserTier } from "@/modules/use-account-addition-data.ts";
+import { useTrayMenu } from "@/hooks/use-tray-menu.ts";
+import { Modal } from 'antd';
 import toast from 'react-hot-toast';
-import {maskEmail} from "@/lib/string-masking.ts";
-import {useAppGlobalLoader} from "@/modules/use-app-global-loader.ts";
-import {AccountSessionList, AccountSessionListAccountItem} from "@/components/business/AccountSessionList.tsx";
-import AccountsListToolbar, {type ListToolbarValue} from "@/components/business/AccountsListToolbar.tsx";
-import {logger} from "@/lib/logger.ts";
+import { maskEmail } from "@/lib/string-masking.ts";
+import { useAppGlobalLoader } from "@/modules/use-app-global-loader.ts";
+import { AccountSessionList, AccountSessionListAccountItem } from "@/components/business/AccountSessionList.tsx";
+import AccountsListToolbar, { type ListToolbarValue } from "@/components/business/AccountsListToolbar.tsx";
+import { logger } from "@/lib/logger.ts";
 
 const tierRank: Record<UserTier, number> = {
   'g1-ultra-tier': 0,
@@ -113,7 +113,7 @@ export function AppContent() {
 
   const handleSwitchAccount = async (user: AccountSessionListAccountItem) => {
     try {
-      appGlobalLoader.open({label: `正在切换到用户: ${maskEmail(user.email)}...`});
+      appGlobalLoader.open({ label: `正在切换到用户: ${maskEmail(user.email)}...` });
       await antigravityAccount.switchToAccount(user.email);
     } finally {
       appGlobalLoader.close();

@@ -11,10 +11,14 @@ body {
     background-color: var(--vscode-editor-background);
 }
 
+
+
 /* VS Code 颜色变量映射 */
 @theme {
     --color-vscode-bg: var(--vscode-editor-background);
+    --color-vscode-bg-hover: var(--vscode-list-hoverBackground);
     --color-vscode-fg: var(--vscode-foreground);
+
     --color-vscode-border: var(--vscode-widget-border);
     --color-vscode-input-bg: var(--vscode-input-background);
     --color-vscode-button-bg: var(--vscode-button-background);

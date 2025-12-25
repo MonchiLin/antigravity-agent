@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react';
 
 interface ErrorStateProps {
@@ -7,21 +7,57 @@ interface ErrorStateProps {
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
+    const [copied, setCopied] = useState(false);
+    const repoUrl = 'https://github.com/MonchiLin/antigravity-agent';
+
+    const handleCopy = () => {
+        const api = (window as any).vscode;
+        if (api) {
+            api.postMessage({
+                command: 'copyToClipboard',
+                text: repoUrl
+            });
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
     return (
-        <div className="p-5 border border-vscode-error rounded-md flex flex-col items-center gap-3 bg-[var(--vscode-inputValidation-errorBackground)]">
-            <div className="text-3xl">⚠️</div>
-            <div className="font-bold">无法连接后端</div>
-            <div className="text-center opacity-90 text-sm">
-                无法连接到 Antigravity Agent。<br />
-                请确认 Rust 后端已启动。
-            </div>
-            <code className="bg-vscode-quote-bg px-2 py-1 rounded text-sm">
-                cargo run
-            </code>
-            <VSCodeButton onClick={onRetry}>重试连接</VSCodeButton>
-            <div className="text-xs opacity-50 mt-2">
-                详细错误: {error}
+        <div className="flex flex-col items-center justify-center p-8 h-full min-h-[400px] text-center w-full mx-auto overflow-hidden">
+            <div className="codicon codicon-debug-disconnect text-6xl mb-6 opacity-20 text-vscode-error"></div>
+
+            <h2 className="text-xl font-normal mb-3">无法连接至 Antigravity Agent</h2>
+
+            <p className="text-[13px] opacity-60 max-w-md mb-8 leading-relaxed">
+                请先启动 Antigravity Agent。
+            </p>
+
+            <div className="flex flex-col items-center gap-5 w-full max-w-md">
+                <div className="w-full bg-vscode-input-bg border border-vscode-border rounded p-4 text-left">
+                    <div className="flex justify-between items-center mb-2">
+                        <div className="text-[10px] uppercase opacity-40 font-bold tracking-wider">还未安装?</div>
+                        <button
+                            onClick={handleCopy}
+                            className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider hover:text-vscode-info transition-colors bg-transparent border-none cursor-pointer outline-none"
+                        >
+                            <span className={`codicon ${copied ? 'codicon-check text-vscode-success' : 'codicon-copy'} text-[12px]`}></span>
+                            {copied ? '已复制' : '复制链接'}
+                        </button>
+                    </div>
+                    <a
+                        href={`command:vscode.open?${encodeURIComponent(JSON.stringify([repoUrl]))}`}
+                        className="text-sm font-mono block opacity-80 hover:text-vscode-info transition-colors cursor-pointer break-all underline decoration-vscode-info/30 hover:decoration-vscode-info p-1 no-underline"
+                        title="点击尝试在浏览器中打开"
+                    >
+                        {repoUrl}
+                    </a>
+                </div>
+
+                <VSCodeButton className="w-full" onClick={onRetry}>
+                    立即重试
+                </VSCodeButton>
             </div>
         </div>
     );
 };
+

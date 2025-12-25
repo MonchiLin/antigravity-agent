@@ -1,5 +1,6 @@
-import * as vscode from 'vscode';
 import { Logger } from './logger';
+import { AutomationEngine } from './automation-engine';
+import { AntigravityPanel } from './AntigravityPanel';
 
 export class AutoAcceptManager {
     private static enabled = false;
@@ -44,17 +45,20 @@ export class AutoAcceptManager {
         if (!this.enabled) return;
 
         try {
-            // Attempt to accept Agent steps (Context: Editor)
-            await vscode.commands.executeCommand('antigravity.agent.acceptAgentStep');
-        } catch (e) {
-            // Command might not be available or valid in current context, ignore
-        }
+            const result = await AutomationEngine.runCycle();
 
-        try {
-            // Attempt to accept Terminal commands (Context: Terminal)
-            await vscode.commands.executeCommand('antigravity.terminal.accept');
+            if (result.clicked.length > 0) {
+                // If the panel is open, notify it for analytics update
+                if (AntigravityPanel.currentPanel) {
+                    AntigravityPanel.currentPanel.postMessage({
+                        command: 'automationEvent',
+                        actions: result.clicked,
+                        timeSaved: result.timeSaved
+                    });
+                }
+            }
         } catch (e) {
-            // Ignore
+            Logger.log(`❌ Automation Cycle Error: ${e}`);
         }
     }
 }

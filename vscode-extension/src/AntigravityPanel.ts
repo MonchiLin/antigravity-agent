@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+
+
+
 export class AntigravityPanel {
     public static currentPanel: AntigravityPanel | undefined;
     private static readonly viewType = 'antigravity';
@@ -26,6 +29,7 @@ export class AntigravityPanel {
             column || vscode.ViewColumn.One,
             {
                 enableScripts: true,
+                enableCommandUris: true,
                 localResourceRoots: [
                     vscode.Uri.joinPath(context.extensionUri, 'dist'),
                     vscode.Uri.joinPath(context.extensionUri, 'images')
@@ -53,11 +57,28 @@ export class AntigravityPanel {
         // Handle messages from the webview
         this._panel.webview.onDidReceiveMessage(
             message => {
-                switch (message.command) {
-                    case 'setAutoAccept':
-                        const { AutoAcceptManager } = require('./auto-accept-manager');
-                        AutoAcceptManager.toggle(message.enabled);
-                        return;
+                try {
+                    console.log(`[Antigravity] Received message: ${JSON.stringify(message)}`);
+                    switch (message.command) {
+                        case 'setAutoAccept':
+                            const { AutoAcceptManager } = require('./auto-accept-manager');
+                            AutoAcceptManager.toggle(message.enabled);
+                            break;
+                        case 'openExternal':
+                            if (message.url) {
+                                vscode.window.showInformationMessage(`正在打开: ${message.url}`);
+                                vscode.env.openExternal(vscode.Uri.parse(message.url));
+                            }
+                            break;
+                        case 'copyToClipboard':
+                            if (message.text) {
+                                vscode.env.clipboard.writeText(message.text);
+                                vscode.window.showInformationMessage('链接已复制到剪贴板');
+                            }
+                            break;
+                    }
+                } catch (err) {
+                    console.error(`[Antigravity] Error handling message: ${err}`);
                 }
             },
             null,
@@ -80,28 +101,18 @@ export class AntigravityPanel {
     }
 
     private _update(context: vscode.ExtensionContext) {
-        const webview = this._panel.webview;
-        this._panel.webview.html = this._getHtmlForWebview(webview, context);
+        this._panel.webview.html = __getWebviewHtml__({
+            serverUrl: process.env.VITE_DEV_SERVER_URL,
+            webview: this._panel.webview,
+            context,
+        });
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview, context: vscode.ExtensionContext) {
-        // 使用构建后的文件（开发和生产模式统一）
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets', 'index.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets', 'index.css'));
 
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; connect-src http://127.0.0.1:*; img-src ${webview.cspSource} data: https:; font-src ${webview.cspSource} https: data:;">
-    <link rel="stylesheet" href="${styleUri}">
-    <title>Antigravity</title>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="${scriptUri}"></script>
-</body>
-</html>`;
+
+    public postMessage(message: any) {
+        this._panel.webview.postMessage(message);
     }
+
+
 }

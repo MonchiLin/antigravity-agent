@@ -71,8 +71,13 @@ export const AccountsTab: React.FC = () => {
     }, []);
 
     if (loading) {
-        return <VSCodeProgressRing />;
+        return (
+            <div className="flex items-center justify-center h-full min-h-[200px]">
+                <VSCodeProgressRing />
+            </div>
+        );
     }
+
 
     if (error) {
         return <ErrorState error={error} onRetry={fetchAccounts} />;
