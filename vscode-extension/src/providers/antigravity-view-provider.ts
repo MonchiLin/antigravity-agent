@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+/**
+ * Providers the Sidebar View for Antigravity.
+ */
 export class AntigravityViewProvider implements vscode.WebviewViewProvider {
 
     public static readonly viewType = 'antigravity-view';
@@ -48,11 +51,8 @@ export class AntigravityViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
-        // Vite with @tomjs/vscode outputs to dist/webview/assets/index.js (default behavior for 1 entry)
-        // Or sometimes dist/webview/index.js? 
-        // Build log said: dist/webview/assets/index.js
+        // Points to the built webview assets
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview', 'assets', 'index.js'));
-        // const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'style.css'));
 
         return `<!DOCTYPE html>
 			<html lang="en">

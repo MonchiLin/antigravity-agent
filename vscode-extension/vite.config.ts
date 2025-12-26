@@ -14,7 +14,7 @@ export default defineConfig({
                 formats: ['cjs'], // VS Code extensions essentially run in Node.js, CJS is standard
             },
             webview: {
-                'antigravity.view': {
+                'antigravity': {
                     entry: 'index.html',
                 }
             },
@@ -32,7 +32,7 @@ export default defineConfig({
         }
     },
     server: {
-        port: 5173,
+        port: 5199,
         strictPort: true,
         host: '127.0.0.1',
         cors: {

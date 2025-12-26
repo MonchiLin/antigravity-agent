@@ -32,7 +32,8 @@ struct UserInfoResponse {
 
 #[derive(Deserialize)]
 struct LoadCodeAssistResponse {
-    cloudaicompanionProject: String,
+    #[serde(rename = "cloudaicompanionProject")]
+    cloudaicompanion_project: String,
 }
 
 #[derive(Deserialize)]
@@ -204,7 +205,7 @@ async fn fetch_code_assist_project(access_token: &str) -> Result<String, String>
         .map_err(|e| e.to_string())?;
 
     let json: LoadCodeAssistResponse = res.json().await.map_err(|e| e.to_string())?;
-    Ok(json.cloudaicompanionProject)
+    Ok(json.cloudaicompanion_project)
 }
 
 async fn fetch_available_models(access_token: &str, project: &str) -> Result<Value, String> {

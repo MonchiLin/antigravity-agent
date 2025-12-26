@@ -14,6 +14,7 @@ async fn status() -> impl Responder {
 }
 
 // GET /api/get_antigravity_accounts
+// GET /api/get_antigravity_accounts
 #[get("/api/get_antigravity_accounts")]
 async fn get_accounts(data: web::Data<Arc<parking_lot::Mutex<AppState>>>) -> impl Responder {
     tracing::debug!("HTTP: Getting accounts");
@@ -23,35 +24,13 @@ async fn get_accounts(data: web::Data<Arc<parking_lot::Mutex<AppState>>>) -> imp
         state.config_dir.clone()
     };
     
-    let antigravity_dir = config_dir.join("antigravity-accounts");
-    if !antigravity_dir.exists() {
-        return HttpResponse::Ok().json(Vec::<serde_json::Value>::new());
-    }
-
-    let mut accounts = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(&antigravity_dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "json") {
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    if let Ok(backup_data) = serde_json::from_str::<serde_json::Value>(&content) {
-                         if let Some(jetski_state) = backup_data.get("jetskiStateSync.agentManagerInitState").and_then(|v| v.as_str()) {
-                             if let Ok(decoded) = crate::antigravity::account::decode_jetski_state_proto(jetski_state) {
-                                 let modified_time = std::fs::metadata(&path).and_then(|m| m.modified()).unwrap_or(std::time::SystemTime::UNIX_EPOCH);
-                                 accounts.push((modified_time, decoded));
-                             }
-                         }
-                    }
-                }
-            }
+    match crate::commands::account_commands::get_antigravity_accounts_logic(&config_dir).await {
+        Ok(accounts) => HttpResponse::Ok().json(accounts),
+        Err(e) => {
+             tracing::error!("Failed to get accounts via HTTP: {}", e);
+             HttpResponse::InternalServerError().json(json!({ "error": e }))
         }
     }
-    
-    // Sort
-    accounts.sort_by(|a, b| b.0.cmp(&a.0));
-    let decoded_only: Vec<serde_json::Value> = accounts.into_iter().map(|(_, decoded)| decoded).collect();
-    
-    HttpResponse::Ok().json(decoded_only)
 }
 
 #[derive(serde::Deserialize)]
@@ -111,6 +90,7 @@ async fn get_current_account_http() -> impl Responder {
     }
 }
 
+
 /// 启动 HTTP 服务器
 pub fn init(app_handle: tauri::AppHandle, state: Arc<parking_lot::Mutex<AppState>>) {
     // Actix-web 需要自己的 system runner，最好不要混用 tauri 的 runtime
@@ -129,6 +109,7 @@ pub fn init(app_handle: tauri::AppHandle, state: Arc<parking_lot::Mutex<AppState
                     .service(status)
                     .service(get_accounts)
                     .service(switch_account)
+                    .service(get_account_metrics_http)
                     .service(get_account_metrics_http)
                     .service(get_current_account_http)
             })

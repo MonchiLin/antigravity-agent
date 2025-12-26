@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react';
 
 interface ErrorStateProps {
@@ -9,6 +9,24 @@ interface ErrorStateProps {
 export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
     const [copied, setCopied] = useState(false);
     const repoUrl = 'https://github.com/MonchiLin/antigravity-agent';
+
+    const [countdown, setCountdown] = useState(5);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        } else {
+            onRetry();
+            setCountdown(5); // Reset for next cycle if retry fails immediately
+        }
+        return () => clearTimeout(timer);
+    }, [countdown, onRetry]);
+
+    const handleManualRetry = () => {
+        setCountdown(5);
+        onRetry();
+    };
 
     const handleCopy = () => {
         const api = (window as any).vscode;
@@ -53,9 +71,14 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
                     </a>
                 </div>
 
-                <VSCodeButton className="w-full" onClick={onRetry}>
-                    立即重试
-                </VSCodeButton>
+                <div className="w-full flex flex-col gap-2">
+                    <VSCodeButton className="w-full" onClick={handleManualRetry}>
+                        立即重试
+                    </VSCodeButton>
+                    <div className="text-[11px] opacity-40 animate-pulse">
+                        {countdown} 秒后自动重连...
+                    </div>
+                </div>
             </div>
         </div>
     );

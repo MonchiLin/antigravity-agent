@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Logger } from './logger';
+import { Logger } from '../utils/logger';
 import { AccountMetrics } from '@/commands/types/account.types';
 
 interface CurrentAccount {
@@ -11,6 +11,10 @@ interface CurrentAccount {
     };
 }
 
+/**
+ * Manages the VS Code Status Bar item for Antigravity.
+ * Handles polling for account metrics and displaying real-time usage.
+ */
 export class StatusBarManager {
     private static interval: NodeJS.Timeout | undefined;
     private static statusBarItem: vscode.StatusBarItem;
@@ -18,18 +22,25 @@ export class StatusBarManager {
 
     private static currentMetrics: AccountMetrics | null = null;
     private static lastModelName: string = 'Gemini 3 Pro (High)'; // Default Model Name
+    private static currentPollDuration: number = 30000;
 
+    /**
+     * Initializes the status bar manager.
+     * @param item The status bar item to manage.
+     * @param context The extension context.
+     */
     public static initialize(item: vscode.StatusBarItem, context: vscode.ExtensionContext) {
         this.statusBarItem = item;
         this.startPolling();
         context.subscriptions.push({ dispose: () => this.stopPolling() });
     }
 
-    private static startPolling() {
+    private static startPolling(intervalMs: number = 30000) {
+        this.stopPolling();
         // Initial fetch
         this.update();
-        // Poll every 30 seconds
-        this.interval = setInterval(() => this.update(), 30 * 1000);
+        // Poll
+        this.interval = setInterval(() => this.update(), intervalMs);
     }
 
     private static stopPolling() {
@@ -39,23 +50,43 @@ export class StatusBarManager {
         }
     }
 
+    /**
+     * Updates the status bar immediately with new model usage context.
+     * Useful for "hijacking" the display when a specific model is used.
+     * @param modelName The name of the model being used.
+     */
     public static async updateWithModelUsage(modelName: string) {
         this.lastModelName = modelName;
 
-        // Trigger an update to refresh UI with new category
-        // If we have cached metrics, we can update immediately
+        // If we have cached metrics, update display immediately
         if (this.currentMetrics) {
             this.render(this.currentMetrics);
         } else {
+            // Otherwise force a fetch
             await this.update();
         }
     }
 
+    /**
+     * Fetches the latest account info and metrics from the local API.
+     */
     public static async update() {
         try {
             // 1. Get Current Account
             const accRes = await fetch(`${this.API_BASE}/get_current_antigravity_account_info`);
-            if (!accRes.ok) return;
+
+            // Connection successful - reset warning visual
+            this.statusBarItem.color = undefined;
+            this.statusBarItem.backgroundColor = undefined;
+
+            // Switch back to normal polling (30s) if we were in fast recovery mode
+            if (this.currentPollDuration !== 30000) {
+                this.currentPollDuration = 30000;
+                this.startPolling(30000);
+                return; // startPolling calls update() immediately
+            }
+
+            if (!accRes.ok) throw new Error('Failed to fetch account info');
             const currentAccount = await accRes.json() as CurrentAccount | null;
 
             if (!currentAccount || !currentAccount.context?.email) {
@@ -82,7 +113,17 @@ export class StatusBarManager {
             this.render(this.currentMetrics, currentAccount);
 
         } catch (error) {
-            Logger.log(`Failed to update status bar: ${error}`);
+            // Connection Error Handling
+
+            this.statusBarItem.text = "$(debug-disconnect) Antigravity: Offline";
+            this.statusBarItem.tooltip = "无法连接至 Antigravity Agent\n(5秒后自动重连...)";
+            this.statusBarItem.color = new vscode.ThemeColor('errorForeground');
+
+            // Switch to fast polling (5s) for quick recovery detection
+            if (this.currentPollDuration !== 5000) {
+                this.currentPollDuration = 5000;
+                this.startPolling(5000);
+            }
         }
     }
 
@@ -120,7 +161,7 @@ export class StatusBarManager {
 
         // 4. Update Status Bar Text
         // Resolve category for quota lookup
-        const { getQuotaCategory } = require('./constants/model-mappings');
+        const { getQuotaCategory } = require('../constants/model-mappings');
         const category = getQuotaCategory(this.lastModelName);
 
         // Find quota for that category

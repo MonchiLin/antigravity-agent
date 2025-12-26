@@ -1,13 +1,17 @@
-import { Logger } from './logger';
-import { AutomationEngine } from './automation-engine';
-import { AntigravityPanel } from './AntigravityPanel';
+import { Logger } from '../utils/logger';
+import { AutomationEngine } from '../services/automation-engine';
 
+/**
+ * Manages the "Auto Pilot" mode which automatically accepts suggestions and runs commands.
+ * Orchestrates the automation cycle with randomized timing.
+ */
 export class AutoAcceptManager {
     private static enabled = false;
     private static timer: NodeJS.Timeout | undefined;
 
     /**
-     * Toggles the Smart Pilot mode (Auto-Accept)
+     * Toggles the Smart Pilot mode (Auto-Accept).
+     * @param enabled Whether to enable or disable the pilot.
      */
     public static toggle(enabled: boolean) {
         this.enabled = enabled;
@@ -31,7 +35,7 @@ export class AutoAcceptManager {
         if (!this.enabled) return;
 
         // Randomized Jitter: 400ms to 900ms
-        // This makes it look less like a robot (fixed interval) and more like a fast human.
+        // Simulates human reaction time to avoid conflicting with rapid updates or looking robotic
         const jitter = Math.floor(Math.random() * 500) + 400;
 
         this.timer = setTimeout(async () => {
@@ -45,18 +49,7 @@ export class AutoAcceptManager {
         if (!this.enabled) return;
 
         try {
-            const result = await AutomationEngine.runCycle();
-
-            if (result.clicked.length > 0) {
-                // If the panel is open, notify it for analytics update
-                if (AntigravityPanel.currentPanel) {
-                    AntigravityPanel.currentPanel.postMessage({
-                        command: 'automationEvent',
-                        actions: result.clicked,
-                        timeSaved: result.timeSaved
-                    });
-                }
-            }
+            await AutomationEngine.runCycle();
         } catch (e) {
             Logger.log(`❌ Automation Cycle Error: ${e}`);
         }
