@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Logger } from '../utils/logger';
+import { AutoAcceptManager } from './auto-accept-manager';
 
 // Declare global function injected by Vite build or shim
 declare const __getWebviewHtml__: (options: any) => string;
@@ -69,8 +70,6 @@ export class AntigravityPanel {
                     Logger.log(`Received message: ${message.command}`, message);
                     switch (message.command) {
                         case 'setAutoAccept':
-                            // Dynamic require to avoid circular dependency
-                            const { AutoAcceptManager } = require('./auto-accept-manager');
                             AutoAcceptManager.toggle(message.enabled);
                             break;
                         case 'openExternal':

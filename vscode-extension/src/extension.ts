@@ -3,7 +3,7 @@ import { AntigravityPanel } from './managers/antigravity-panel';
 import { Logger } from './utils/logger';
 import { StatusBarManager } from './managers/status-bar-manager';
 import { BrowserHandler } from './managers/browser-handler';
-import { AnalyticsManager } from './managers/analytics-manager';
+
 
 export let statusBarItem: vscode.StatusBarItem;
 
@@ -44,7 +44,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize Managers
     StatusBarManager.initialize(statusBarItem, context);
     BrowserHandler.initialize(context);
-    AnalyticsManager.initialize(context);
 
     context.subscriptions.push(statusBarItem);
 }

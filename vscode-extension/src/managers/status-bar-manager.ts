@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Logger } from '../utils/logger';
 import { AccountMetrics } from '@/commands/types/account.types';
+import { getQuotaCategory } from '../constants/model-mappings';
 
 interface CurrentAccount {
     context: {
@@ -161,7 +162,6 @@ export class StatusBarManager {
 
         // 4. Update Status Bar Text
         // Resolve category for quota lookup
-        const { getQuotaCategory } = require('../constants/model-mappings');
         const category = getQuotaCategory(this.lastModelName);
 
         // Find quota for that category
