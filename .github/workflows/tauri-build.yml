@@ -46,7 +46,7 @@ jobs:
             arch: x86_64
             runs-on: macos-latest
             target: x86_64-apple-darwin
-          - platform: ubuntu-latest
+          - platform: ubuntu-22.04
             arch: x86_64
             runs-on: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -64,7 +64,7 @@ jobs:
           ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
 
       - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -209,7 +209,7 @@ jobs:
           fi
 
           # Linux
-          if [ "$PLATFORM" = "ubuntu-latest" ]; then
+          if [ "$PLATFORM" = "ubuntu-22.04" ]; then
             if [ -d "$BUNDLE_DIR/appimage" ]; then
               (
                 cd "$BUNDLE_DIR/appimage/"
