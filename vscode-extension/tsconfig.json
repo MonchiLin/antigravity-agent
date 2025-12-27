@@ -23,7 +23,9 @@
         "node_modules",
         ".vscode-test",
         "src/webview/**/*",
-        "vite.config.ts"
+      "vite.config.ts",
+      "vite.extension.config.ts",
+      "vite.webview.config.ts"
     ]
     // Exclude webview from tsc build, let Vite handle it. 
     // Wait, if I exclude it, types might be tricky if shared. 

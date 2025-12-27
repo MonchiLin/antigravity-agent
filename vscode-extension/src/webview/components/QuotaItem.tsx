@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import {useTranslation} from 'react-i18next';
+
 interface QuotaItemProps {
     label: string;
     percentage: number | undefined;
@@ -30,8 +31,15 @@ const getQuotaColor = (percentage: number | undefined) => {
 
 export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetText }) => {
     const { t } = useTranslation(['dashboard']);
-    const val = percentage !== undefined ? Math.round(percentage * 100) : '?';
-    const showReset = percentage !== undefined && percentage < 1 && resetText;
+
+    // Treat undefined or negative values as unknown/invalid
+    const isValid = percentage !== undefined && percentage >= 0;
+    const val = isValid ? Math.round(percentage! * 100) : '?';
+
+    // Only show reset text if valid and used (less than 100% typically, or logic as needed)
+    // Original logic was percentage < 1, which implies < 100%. 
+    // If -1 comes in, we don't want to show resetText if it's invalid.
+    const showReset = isValid && percentage! < 1 && resetText;
 
     return (
         <div className="flex items-center justify-between text-sm mt-1">
@@ -43,7 +51,8 @@ export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetTe
                     </span>
                 )}
             </div>
-            <span className={`font-bold ${getQuotaColor(percentage)}`}>{val}%</span>
+            <span
+                className={`font-bold ${getQuotaColor(isValid ? percentage : undefined)}`}>{val}{isValid ? '%' : ''}</span>
         </div>
     );
 };

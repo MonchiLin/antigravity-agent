@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 import path from 'path';
 
 export default defineConfig({
@@ -6,8 +6,8 @@ export default defineConfig({
         minify: false,
         lib: {
             entry: 'src/extension.ts',
-            fileName: () => 'extension.cjs',
-            formats: ['cjs']
+            fileName: () => 'extension.js',
+            formats: ['es']
         },
         outDir: 'dist/extension',
         rollupOptions: {

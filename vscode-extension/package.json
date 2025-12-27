@@ -19,7 +19,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./dist/extension/extension.cjs",
+    "main": "./dist/extension/extension.js",
     "contributes": {
         "commands": [
             {

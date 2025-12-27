@@ -4,6 +4,8 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde_json::json;
 use std::sync::Arc;
 
+mod middleware;
+
 // GET /api/is_antigravity_running
 #[get("/api/is_antigravity_running")]
 async fn status() -> impl Responder {
@@ -104,6 +106,8 @@ pub fn init(app_handle: tauri::AppHandle, state: Arc<parking_lot::Mutex<AppState
 
                 App::new()
                     .wrap(cors)
+                    // 使用中间件统一处理 camelCase -> snake_case 参数名
+                    .wrap(middleware::CamelCaseToSnakeCase)
                     .app_data(web::Data::new(state.clone()))
                     .app_data(web::Data::new(app_handle.clone()))
                     .service(status)

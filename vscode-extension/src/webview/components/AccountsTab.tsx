@@ -1,86 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react';
-import { useAccountAdditionData } from '@/modules/use-account-addition-data';
-import { invoke } from '@tauri-apps/api/core';
-import { AccountCard } from './AccountCard';
-import { ErrorState } from './ErrorState';
+import React, {useEffect} from 'react';
+import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react';
+import {useAccountAdditionData} from '@/modules/use-account-addition-data';
+import {useAntigravityAccount} from '@/modules/use-antigravity-account';
+import {AccountCard} from './AccountCard';
 import './AccountsTab.css';
 
-interface Account {
-    context: {
-        email: string;
-        plan_name: string;
-        plan?: {
-            slug: string;
-        };
-    };
-    auth: {
-        access_token: string;
-        id_token: string;
-    };
-}
-
 export const AccountsTab: React.FC = () => {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [currentEmail, setCurrentEmail] = useState<string | null>(null);
-
+    const {
+        accounts,
+        currentAuthInfo,
+        getAccounts,
+        insertOrUpdateCurrentAccount,
+        switchToAccount
+    } = useAntigravityAccount();
     const additionData = useAccountAdditionData();
 
-    const fetchAccounts = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const [data, currentInfo] = await Promise.all([
-                invoke<Account[]>('get_antigravity_accounts'),
-                invoke<any>('get_current_antigravity_account_info').catch(() => null)
-            ]);
-
-            setAccounts(data);
-            if (currentInfo?.context?.email) {
-                setCurrentEmail(currentInfo.context.email);
-            }
-
-            data.forEach(account => {
-                additionData.update(account as any).catch(e => console.error("Failed to update quota", e));
-            });
-        } catch (err: any) {
-            setError(err.message || String(err));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const switchAccount = async (email: string) => {
-        try {
-            setLoading(true);
-            await invoke('switch_to_antigravity_account', { account_name: email });
-            await fetchAccounts();
-        } catch (err: any) {
-            setError(err.message || String(err));
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // 初始化加载
     useEffect(() => {
-        fetchAccounts();
-        const intervalId = setInterval(() => fetchAccounts(), 30 * 1000);
-        return () => clearInterval(intervalId);
+        const init = async () => {
+            await Promise.all([
+                getAccounts(),
+                insertOrUpdateCurrentAccount()
+            ]);
+        };
+        init();
     }, []);
 
-    if (loading) {
+    // 轮询更新账户列表和额度信息
+    useEffect(() => {
+        if (accounts.length === 0) return;
+
+        // 更新额度信息
+        accounts.forEach(account => {
+            additionData.update(account).catch(e => console.error("Failed to update quota", e));
+        });
+
+        // 定时轮询
+        const intervalId = setInterval(() => {
+            getAccounts();
+            insertOrUpdateCurrentAccount();
+            accounts.forEach(account => {
+                additionData.update(account).catch(e => console.error("Failed to update quota", e));
+            });
+        }, 30 * 1000);
+
+        return () => clearInterval(intervalId);
+    }, [accounts.length]); // 依赖 accounts.length 避免频繁重置定时器，但确保有账户时才开始干活
+
+    const handleSwitchAccount = async (email: string) => {
+        await switchToAccount(email);
+        // 切换后刷新数据
+        await Promise.all([
+            getAccounts(),
+            insertOrUpdateCurrentAccount()
+        ]);
+    };
+
+    if (!accounts && !currentAuthInfo) {
         return (
             <div className="flex items-center justify-center h-full min-h-[200px]">
                 <VSCodeProgressRing />
             </div>
         );
-    }
-
-
-    if (error) {
-        return <ErrorState error={error} onRetry={fetchAccounts} />;
     }
 
     return (
@@ -91,8 +72,8 @@ export const AccountsTab: React.FC = () => {
                         key={acc.context.email}
                         account={acc}
                         data={additionData.data[acc.context.email]}
-                        isCurrent={currentEmail === acc.context.email}
-                        onSwitch={switchAccount}
+                        isCurrent={currentAuthInfo?.context.email === acc.context.email}
+                        onSwitch={handleSwitchAccount}
                     />
                 ))}
             </div>

@@ -1,8 +1,8 @@
-import {create} from 'zustand';
-import {logger} from '../lib/logger.ts';
-import {AccountCommands} from '@/commands/AccountCommands.ts';
-import type {AntigravityAccount} from '@/commands/types/account.types.ts';
-import {AccountManageCommands} from "@/commands/AccountManageCommands.ts";
+import { create } from 'zustand';
+import { logger } from '../lib/logger.ts';
+import { AccountCommands } from '@/commands/AccountCommands.ts';
+import type { AntigravityAccount } from '@/commands/types/account.types.ts';
+import { AccountManageCommands } from "@/commands/AccountManageCommands.ts";
 
 // 常量定义
 const FILE_WRITE_DELAY_MS = 500; // 等待文件写入完成的延迟时间
@@ -69,7 +69,7 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
         set({ accounts });
 
         // 6. 更新当前认证信息
-        set({currentAuthInfo: currentInfo});
+        set({ currentAuthInfo: currentInfo });
       } else {
         throw new Error('未检测到有效的账户信息');
       }
@@ -123,7 +123,7 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
       // 如果读取失败，返回当前 store 中的用户
       return get().accounts;
     }
-  },
+  }
 }));
 
 export const useCurrentAntigravityAccount: () => AntigravityAccount | undefined = () => useAntigravityAccount(state => state.accounts.find(user => user.context.email === state.currentAuthInfo?.context.email));
