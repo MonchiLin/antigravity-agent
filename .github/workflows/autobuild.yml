@@ -54,7 +54,7 @@ jobs:
             ⚠️ **注意**：这是自动构建的测试版本，可能不稳定。建议普通用户使用 [正式发布版本](https://github.com/MonchiLin/antigravity-agent/releases/latest)。
 
             ### VS Code 插件
-            - [VSIX安装包 (Nightly)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-vscode-nightly.vsix)
+            - [VSIX安装包 (Nightly)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent-nightly.vsix)
             
             ### Windows
             - [安装版(推荐)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_x64-setup.exe) | [便携版](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity-Agent-x86_64-Portable.zip)
@@ -131,13 +131,13 @@ jobs:
       - name: Build and Package Extension (Nightly)
         working-directory: ./vscode-extension
         # Use dynamic filename based on package.json version
-        run: npx @vscode/vsce package --out ./antigravity-vscode-nightly.vsix
+        run: npx @vscode/vsce package --out ./antigravity-agent-nightly.vsix
 
       - name: Upload Extension to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload autobuild vscode-extension/antigravity-vscode-nightly.vsix --clobber --repo "${{ github.repository }}"
+          gh release upload autobuild vscode-extension/antigravity-agent-nightly.vsix --clobber --repo "${{ github.repository }}"
 
       - name: Publish to Open VSX
         # Always run, version collision handled by timestamp
@@ -151,6 +151,6 @@ jobs:
           fi
           
           # Publish the file we just built
-          npx ovsx publish ./antigravity-vscode-nightly.vsix --pat "$OVSX_PAT"
+          npx ovsx publish ./antigravity-agent-nightly.vsix --pat "$OVSX_PAT"
 
 

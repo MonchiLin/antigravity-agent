@@ -1,5 +1,5 @@
 {
-    "name": "antigravity-vscode",
+    "name": "antigravity-agent",
     "displayName": "Antigravity Agent",
     "description": "Manage your Antigravity accounts directly from VS Code",
     "version": "1.5.3",

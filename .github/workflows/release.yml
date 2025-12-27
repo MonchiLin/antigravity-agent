@@ -48,7 +48,7 @@ jobs:
           name: 'Antigravity Agent ${{ steps.version.outputs.tag }}'
           body: |
             ### VS Code 插件
-            - [VSIX安装包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-vscode-${{ steps.version.outputs.version }}.vsix)
+            - [VSIX安装包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent-${{ steps.version.outputs.version }}.vsix)
 
             ### Windows
             - [安装版(推荐)](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_x64-setup.exe) | [便携版](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity-Agent-x86_64-Portable.zip)
@@ -142,14 +142,14 @@ jobs:
 
       - name: Build and Package Extension
         working-directory: ./vscode-extension
-        run: npx @vscode/vsce package --out ./antigravity-vscode-${{ steps.bump.outputs.version }}.vsix
+        run: npx @vscode/vsce package --out ./antigravity-agent-${{ steps.bump.outputs.version }}.vsix
 
       - name: Upload Extension to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare-release.outputs.tag }}
         run: |
-          gh release upload "$TAG" vscode-extension/antigravity-vscode-${{ steps.bump.outputs.version }}.vsix --clobber --repo "${{ github.repository }}"
+          gh release upload "$TAG" vscode-extension/antigravity-agent-${{ steps.bump.outputs.version }}.vsix --clobber --repo "${{ github.repository }}"
 
       - name: Publish to Open VSX
         working-directory: ./vscode-extension
@@ -160,4 +160,4 @@ jobs:
             echo "⚠️ OVSX_PAT secret not found, skipping Open VSX publish"
             exit 0
           fi
-          npx ovsx publish ./antigravity-vscode-${{ steps.bump.outputs.version }}.vsix --pat "$OVSX_PAT"
+          npx ovsx publish ./antigravity-agent-${{ steps.bump.outputs.version }}.vsix --pat "$OVSX_PAT"

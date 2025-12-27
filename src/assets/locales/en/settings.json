@@ -40,5 +40,16 @@
   },
   "links": {
     "issues": "Report Issues/Request Features"
+  },
+  "extension": {
+    "fetchingInfo": "Fetching extension info...",
+    "fetchFailed": "Failed to fetch extension info: {{status}}",
+    "parseVersionFailed": "Failed to parse extension version",
+    "downloading": "Downloading and installing {{id}} v{{version}}...",
+    "installFailed": "Installation failed",
+    "installFailedTitle": "Extension Installation Failed",
+    "installFailedError": "Automatic installation encountered an error: {{error}}",
+    "installFailedManual": "You can try to download and install manually:",
+    "okButton": "OK"
   }
 }
