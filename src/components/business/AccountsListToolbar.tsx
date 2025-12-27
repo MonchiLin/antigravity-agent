@@ -28,19 +28,23 @@ const useSortOptions = () => {
   ], [t]);
 };
 
-const tierUiMap: Record<UserTier, { label: string; accentClass: string }> = {
-  'free-tier': {
-    label: 'Free',
-    accentClass: 'text-slate-900 dark:text-slate-50',
-  },
-  'g1-pro-tier': {
-    label: 'Pro',
-    accentClass: 'text-amber-700 dark:text-amber-300',
-  },
-  'g1-ultra-tier': {
-    label: 'Ultra',
-    accentClass: 'text-violet-700 dark:text-violet-300',
-  },
+// Use a hook or component to get dynamic translations for map values
+const useTierUiMap = () => {
+  const { t } = useTranslation('common');
+  return React.useMemo<Record<UserTier, { label: string; accentClass: string }>>(() => ({
+    'free-tier': {
+      label: t('tier.free'),
+      accentClass: 'text-slate-900 dark:text-slate-50',
+    },
+    'g1-pro-tier': {
+      label: t('tier.pro'),
+      accentClass: 'text-amber-700 dark:text-amber-300',
+    },
+    'g1-ultra-tier': {
+      label: t('tier.ultra'),
+      accentClass: 'text-violet-700 dark:text-violet-300',
+    },
+  }), [t]);
 };
 
 const allTiers: UserTier[] = ['free-tier', 'g1-pro-tier', 'g1-ultra-tier'];
@@ -73,6 +77,7 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
 }) => {
   const { t } = useTranslation('dashboard');
   const sortOptions = useSortOptions();
+  const tierUiMap = useTierUiMap();
   const normalizedTiers = tiers && tiers.length > 0 ? tiers : null;
   const selectedTiers = normalizedTiers ?? [];
 

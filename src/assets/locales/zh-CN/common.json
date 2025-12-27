@@ -15,7 +15,9 @@
     "retry": "重试",
     "back": "返回",
     "next": "下一步",
-    "ok": "确定"
+    "ok": "确定",
+    "copy": "复制",
+    "use": "使用"
   },
   "labels": {
     "email": "邮箱",
@@ -28,5 +30,14 @@
     "error": "发生错误",
     "confirm": "确定吗？",
     "noData": "暂无数据"
+  },
+  "status": {
+    "unknown": "Unknown",
+    "notSet": "未设置"
+  },
+  "tier": {
+    "free": "Free",
+    "pro": "Pro",
+    "ultra": "Ultra"
   }
 }

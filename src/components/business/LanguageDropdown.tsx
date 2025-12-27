@@ -18,7 +18,7 @@ export const LanguageDropdown: React.FC<LanguageSwitcherProps> = ({
   className,
   showNativeName = true,
 }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Loading state not strictly needed for Dropdown but keeping logic same
   const [loading, setLoading] = React.useState(false);
 
@@ -43,7 +43,7 @@ export const LanguageDropdown: React.FC<LanguageSwitcherProps> = ({
       };
       dayjs.locale(localeMap[newLanguage]);
 
-      toast.success('Language changed successfully');
+      toast.success(t('settings:language.changeSuccess'));
 
       logger.info('Language changed', {
         module: 'LanguageDropdown',
@@ -51,7 +51,7 @@ export const LanguageDropdown: React.FC<LanguageSwitcherProps> = ({
         to: newLanguage,
       });
     } catch (error) {
-      toast.error('Failed to change language');
+      toast.error(t('settings:language.changeError'));
       logger.error('Failed to change language', {
         module: 'LanguageDropdown',
         error: error instanceof Error ? error.message : String(error),
@@ -82,7 +82,7 @@ export const LanguageDropdown: React.FC<LanguageSwitcherProps> = ({
           "active:scale-95",
           className
         )}
-        title="Change Language"
+        title={t('settings:language.change')}
         disabled={loading}
       >
         <Languages className="w-5 h-5" />

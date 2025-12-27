@@ -33,7 +33,10 @@
   },
   "language": {
     "title": "Language",
-    "description": "Change the interface language"
+    "description": "Change the interface language",
+    "changeSuccess": "Language changed successfully",
+    "changeError": "Failed to change language",
+    "change": "Change Language"
   },
   "links": {
     "issues": "Report Issues/Request Features"

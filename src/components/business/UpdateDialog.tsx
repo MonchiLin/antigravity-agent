@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, RotateCw, AlertTriangle } from 'lucide-react';
 import { UpdateState, UpdateInfo, DownloadProgress } from '../../services/updateService';
 import { Modal } from 'antd';
@@ -28,6 +29,8 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
   onInstall,
   onDismiss,
 }) => {
+  const { t } = useTranslation(['update', 'common']);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -44,7 +47,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
             <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
-                更新失败
+                {t('update:dialog.errorTitle')}
               </h4>
               <p className="text-sm text-red-700 dark:text-red-300">
                 {error}
@@ -54,7 +57,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
 
           <div className="flex justify-end gap-3">
             <BaseButton variant="outline" onClick={onClose}>
-              关闭
+              {t('common:buttons.close')}
             </BaseButton>
           </div>
         </div>
@@ -66,14 +69,14 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
         <div className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">当前版本:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('update:dialog.currentVersion')}</span>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 v{updateInfo.currentVersion}
               </span>
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">最新版本:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('update:dialog.latestVersion')}</span>
               <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                 v{updateInfo.version}
               </span>
@@ -83,7 +86,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
           {updateInfo.body && (
             <div className="mt-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                更新内容:
+                {t('update:dialog.releaseNotes')}
               </h4>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg max-h-48 overflow-y-auto">
                 <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">
@@ -95,10 +98,10 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <BaseButton variant="outline" onClick={onDismiss}>
-              忽略此版本
+              {t('update:dialog.ignore')}
             </BaseButton>
             <BaseButton variant="default" onClick={onDownload} leftIcon={<Download className="w-4 h-4" />}>
-              立即更新
+              {t('update:dialog.updateNow')}
             </BaseButton>
           </div>
         </div>
@@ -110,7 +113,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">下载进度</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('update:dialog.downloadProgress')}</span>
               <span className="font-medium text-gray-900 dark:text-gray-100">
                 {progress.percentage}%
               </span>
@@ -125,7 +128,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
           </div>
 
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-            正在下载更新包，请稍候...
+            {t('update:dialog.downloadingDesc')}
           </p>
         </div>
       );
@@ -140,20 +143,20 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
                 <Download className="w-6 h-6 text-white" />
               </div>
               <h4 className="text-lg font-semibold text-green-800 dark:text-green-200">
-                更新已下载完成
+                {t('update:dialog.readyTitle')}
               </h4>
               <p className="text-sm text-green-700 dark:text-green-300">
-                点击"立即重启"将安装新版本
+                {t('update:dialog.readyDesc')}
               </p>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <BaseButton variant="outline" onClick={onClose}>
-              稍后重启
+              {t('update:dialog.restartLater')}
             </BaseButton>
             <BaseButton variant="default" onClick={onInstall} leftIcon={<RotateCw className="w-4 h-4" />}>
-              立即重启
+              {t('update:dialog.restartNow')}
             </BaseButton>
           </div>
         </div>
@@ -170,7 +173,7 @@ const BusinessUpdateDialog: React.FC<BusinessUpdateDialogProps> = ({
       title={
         <div className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <Download className="w-5 h-5 text-blue-500" />
-          应用更新
+          {t('update:dialog.title')}
         </div>
       }
       footer={null}

@@ -1,4 +1,22 @@
 {
+  "actions": {
+    "delete": "Delete",
+    "use": "Use"
+  },
+  "tooltip": {
+    "currentSession": "Current Session"
+  },
+  "warning": {
+    "unknownTier": {
+      "title": "This symbol means the built-in data does not cover the current account tier",
+      "description": "This is not your fault. To help resolve this, please take a screenshot",
+      "reportLink": "Report to Developer"
+    }
+  },
+  "accountDetail": {
+    "title": "User Details",
+    "apiKey": "API Key"
+  },
   "delete": {
     "title": "Confirm Account Deletion",
     "message": "Are you sure you want to delete account \"{{email}}\"? This action cannot be undone.",

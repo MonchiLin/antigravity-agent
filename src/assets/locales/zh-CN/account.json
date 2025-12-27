@@ -1,4 +1,22 @@
 {
+  "actions": {
+    "delete": "删除",
+    "use": "使用"
+  },
+  "tooltip": {
+    "currentSession": "当前会话"
+  },
+  "warning": {
+    "unknownTier": {
+      "title": "当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级",
+      "description": "这不是您的问题, 为了解决这个问题, 您可以将该提示截图",
+      "reportLink": "提供给开发者"
+    }
+  },
+  "accountDetail": {
+    "title": "用户详情",
+    "apiKey": "API 密钥"
+  },
   "delete": {
     "title": "确认删除账户",
     "message": "确定要删除账户 \"{{email}}\" 吗？此操作无法撤销。",

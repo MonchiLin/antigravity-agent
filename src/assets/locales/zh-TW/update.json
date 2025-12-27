@@ -1,0 +1,34 @@
+{
+    "dialog": {
+        "title": "應用程式更新",
+        "errorTitle": "更新失敗",
+        "currentVersion": "目前版本:",
+        "latestVersion": "最新版本:",
+        "releaseNotes": "更新內容:",
+        "ignore": "略過此版本",
+        "updateNow": "立即更新",
+        "downloadProgress": "下載進度",
+        "downloadingDesc": "正在下載更新檔，請稍候...",
+        "readyTitle": "更新已下載完成",
+        "readyDesc": "按一下\"立即重新啟動\"將安裝新版本",
+        "restartLater": "稍後重新啟動",
+        "restartNow": "立即重新啟動"
+    },
+    "badge": {
+        "available": "有更新",
+        "restart": "重新啟動更新",
+        "failed": "更新失敗",
+        "default": "更新"
+    },
+    "toast": {
+        "downloadComplete": "更新檔下載完成，按一下重新啟動按鈕安裝",
+        "installing": "正在安裝更新並重新啟動應用程式..."
+    },
+    "tooltip": {
+        "failed": "更新失敗：{{error}}",
+        "available": "發現新版本 v{{version}}，按一下檢視",
+        "downloading": "正在下載更新 {{percentage}}%",
+        "ready": "更新已下載，按一下重新啟動安裝",
+        "check": "按一下檢視更新"
+    }
+}

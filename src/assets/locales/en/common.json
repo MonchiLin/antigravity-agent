@@ -15,7 +15,9 @@
     "retry": "Retry",
     "back": "Back",
     "next": "Next",
-    "ok": "OK"
+    "ok": "OK",
+    "copy": "Copy",
+    "use": "Use"
   },
   "labels": {
     "email": "Email",
@@ -28,5 +30,14 @@
     "error": "An error occurred",
     "confirm": "Are you sure?",
     "noData": "No data available"
+  },
+  "status": {
+    "unknown": "Unknown",
+    "notSet": "Not Set"
+  },
+  "tier": {
+    "free": "Free",
+    "pro": "Pro",
+    "ultra": "Ultra"
   }
 }

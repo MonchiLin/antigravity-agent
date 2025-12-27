@@ -26,6 +26,9 @@ import notificationsZhTW from '@/assets/locales/zh-TW/notifications.json';
 import importExportEN from '@/assets/locales/en/import-export.json';
 import importExportZhCN from '@/assets/locales/zh-CN/import-export.json';
 import importExportZhTW from '@/assets/locales/zh-TW/import-export.json';
+import updateEN from '@/assets/locales/en/update.json';
+import updateZhCN from '@/assets/locales/zh-CN/update.json';
+import updateZhTW from '@/assets/locales/zh-TW/update.json';
 
 const resources = {
   en: {
@@ -35,6 +38,7 @@ const resources = {
     settings: settingsEN,
     notifications: notificationsEN,
     importExport: importExportEN,
+    update: updateEN,
   },
   'zh-CN': {
     common: commonZhCN,
@@ -43,6 +47,7 @@ const resources = {
     settings: settingsZhCN,
     notifications: notificationsZhCN,
     importExport: importExportZhCN,
+    update: updateZhCN,
   },
   'zh-TW': {
     common: commonZhTW,
@@ -51,6 +56,7 @@ const resources = {
     settings: settingsZhTW,
     notifications: notificationsZhTW,
     importExport: importExportZhTW,
+    update: updateZhTW,
   },
 };
 
@@ -98,7 +104,7 @@ i18n
     resources,
     fallbackLng: 'en', // Default to English to match backend
     defaultNS: 'common',
-    ns: ['common', 'dashboard', 'account', 'settings', 'notifications', 'importExport'],
+    ns: ['common', 'dashboard', 'account', 'settings', 'notifications', 'importExport', 'update'],
 
     interpolation: {
       escapeValue: false, // React already escapes

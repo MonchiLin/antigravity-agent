@@ -1,4 +1,22 @@
 {
+  "actions": {
+    "delete": "刪除",
+    "use": "使用"
+  },
+  "tooltip": {
+    "currentSession": "目前工作階段"
+  },
+  "warning": {
+    "unknownTier": {
+      "title": "當您看到這個符號說明開發者內建的資料未能涵蓋目前帳戶層級",
+      "description": "這不是您的問題，為了區決這個問題，您可以將該提示截圖",
+      "reportLink": "提供給開發者"
+    }
+  },
+  "accountDetail": {
+    "title": "使用者詳情",
+    "apiKey": "API 金鑰"
+  },
   "delete": {
     "title": "確認刪除帳戶",
     "message": "確定要刪除帳戶 \"{{email}}\" 嗎？此操作無法撤銷。",

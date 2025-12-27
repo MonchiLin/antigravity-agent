@@ -33,7 +33,10 @@
   },
   "language": {
     "title": "語言",
-    "description": "更改介面語言"
+    "description": "更改介面語言",
+    "changeSuccess": "語言切換成功",
+    "changeError": "語言切換失敗",
+    "change": "切換語言"
   },
   "links": {
     "issues": "遇到問題/請求新功能"
