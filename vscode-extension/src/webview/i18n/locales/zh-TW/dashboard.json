@@ -1,0 +1,40 @@
+{
+  "toolbar": {
+    "accounts": "帳戶",
+    "searchPlaceholder": "搜尋郵箱或暱稱...",
+    "filterAll": "全部"
+  },
+  "sort": {
+    "name": "使用者名稱首字母",
+    "geminiPro": "Gemini Pro 配額",
+    "claude": "Claude 配額",
+    "geminiFlash": "Gemini Flash 配額",
+    "geminiImage": "Gemini Image 配額",
+    "tier": "帳戶層次"
+  },
+  "emptyState": {
+    "title": "暫無帳戶資訊",
+    "description": "在 Antigravity 登入帳戶後，本程式會自動讀取。"
+  },
+  "actions": {
+    "loginNew": "登入新帳戶",
+    "import": "匯入帳戶",
+    "exportAll": "匯出所有帳戶",
+    "preferences": "偏好設定",
+    "autoPilot": "自動駕駛",
+    "loadingQuota": "正在加載配額..."
+  },
+  "quota": {
+    "resetAt": "(重置於: {{time}})"
+  },
+  "errorState": {
+    "title": "無法連線至 Antigravity Agent",
+    "description": "請先啟動 Antigravity Agent。",
+    "notInstalled": "還未安裝?",
+    "copyLink": "複製連結",
+    "copied": "已複製",
+    "openInBrowser": "點擊嘗試在瀏覽器中開啟",
+    "retry": "立即重試",
+    "reconnect": "{{seconds}} 秒後自動重連..."
+  }
+}

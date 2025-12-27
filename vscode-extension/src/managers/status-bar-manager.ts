@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Logger } from '../utils/logger';
 import { AccountMetrics } from '@/commands/types/account.types';
 import { getQuotaCategory } from '../constants/model-mappings';
+import { TranslationManager } from './translation-manager';
 
 interface CurrentAccount {
     context: {
@@ -72,6 +73,7 @@ export class StatusBarManager {
      * Fetches the latest account info and metrics from the local API.
      */
     public static async update() {
+        const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
         try {
             // 1. Get Current Account
             const accRes = await fetch(`${this.API_BASE}/get_current_antigravity_account_info`);
@@ -91,8 +93,8 @@ export class StatusBarManager {
             const currentAccount = await accRes.json() as CurrentAccount | null;
 
             if (!currentAccount || !currentAccount.context?.email) {
-                this.statusBarItem.tooltip = "No active Antigravity account";
-                this.statusBarItem.text = "$(account) Antigravity: None";
+                this.statusBarItem.tooltip = t('status.noAccount');
+                this.statusBarItem.text = `$(account) ${t('status.none')}`;
                 return;
             }
 
@@ -116,8 +118,8 @@ export class StatusBarManager {
         } catch (error) {
             // Connection Error Handling
 
-            this.statusBarItem.text = "$(debug-disconnect) Antigravity: Offline";
-            this.statusBarItem.tooltip = "无法连接至 Antigravity Agent\n(5秒后自动重连...)";
+            this.statusBarItem.text = `$(debug-disconnect) ${t('status.offline')}`;
+            this.statusBarItem.tooltip = t('status.connectError');
             this.statusBarItem.color = new vscode.ThemeColor('errorForeground');
 
             // Switch to fast polling (5s) for quick recovery detection
@@ -130,6 +132,7 @@ export class StatusBarManager {
 
     private static render(metrics: AccountMetrics, currentAccount?: CurrentAccount) {
         if (!metrics) return;
+        const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
 
         // 3. Build Tooltip
         const md = new vscode.MarkdownString();
@@ -138,24 +141,24 @@ export class StatusBarManager {
         if (currentAccount) {
             const email = currentAccount.context.email;
             const plan = currentAccount.context.plan?.slug || 'UNKNOWN';
-            md.appendMarkdown(`**User**: ${email}\n\n`);
-            md.appendMarkdown(`**Plan**: ${plan}\n\n`);
+            md.appendMarkdown(`**${t('status.tooltip.user')}**: ${email}\n\n`);
+            md.appendMarkdown(`**${t('status.tooltip.plan')}**: ${plan}\n\n`);
             md.appendMarkdown(`---\n\n`);
         }
 
         if (metrics.quotas && metrics.quotas.length > 0) {
-            md.appendMarkdown(`| Model | Usage | Reset |\n`);
+            md.appendMarkdown(`| ${t('status.tooltip.model')} | ${t('status.tooltip.remaining')} | ${t('status.tooltip.reset')} |\n`);
             md.appendMarkdown(`|---|---|---|\n`);
 
             metrics.quotas.forEach(q => {
-                const usage = Math.round(q.percentage * 100);
+                const remaining = Math.round(q.percentage * 100);
                 const isWarning = q.percentage < 0.2;
-                const usageStr = isWarning ? `**${usage}%** 🔴` : `${usage}%`;
+                const remainingStr = isWarning ? `**${remaining}%** 🔴` : `${remaining}%`;
 
-                md.appendMarkdown(`| ${q.model_name} | ${usageStr} | ${q.reset_text || '-'} |\n`);
+                md.appendMarkdown(`| ${q.model_name} | ${remainingStr} | ${q.reset_text || '-'} |\n`);
             });
         } else {
-            md.appendMarkdown(`*No quota info available*`);
+            md.appendMarkdown(`*${t('status.tooltip.noQuota')}*`);
         }
 
         this.statusBarItem.tooltip = md;

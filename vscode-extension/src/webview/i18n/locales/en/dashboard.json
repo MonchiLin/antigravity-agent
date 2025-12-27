@@ -1,0 +1,40 @@
+{
+  "toolbar": {
+    "accounts": "Accounts",
+    "searchPlaceholder": "Search email or nickname...",
+    "filterAll": "All"
+  },
+  "sort": {
+    "name": "Username (A-Z)",
+    "geminiPro": "Gemini Pro Quota",
+    "claude": "Claude Quota",
+    "geminiFlash": "Gemini Flash Quota",
+    "geminiImage": "Gemini Image Quota",
+    "tier": "Account Tier"
+  },
+  "emptyState": {
+    "title": "No Accounts Available",
+    "description": "After logging into Antigravity, this program will automatically detect accounts."
+  },
+  "actions": {
+    "loginNew": "Login New Account",
+    "import": "Import Accounts",
+    "exportAll": "Export All Accounts",
+    "preferences": "Preferences",
+    "autoPilot": "Auto Pilot",
+    "loadingQuota": "Loading quota..."
+  },
+  "quota": {
+    "resetAt": "(Resets: {{time}})"
+  },
+  "errorState": {
+    "title": "Unable to connect to Antigravity Agent",
+    "description": "Please start the Antigravity Agent first.",
+    "notInstalled": "Not installed?",
+    "copyLink": "Copy Link",
+    "copied": "Copied",
+    "openInBrowser": "Click to open in browser",
+    "retry": "Retry Now",
+    "reconnect": "Reconnecting in {{seconds}}s..."
+  }
+}

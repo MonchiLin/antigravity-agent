@@ -5,7 +5,9 @@ import {
     VSCodeCheckbox
 } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AccountsTab } from './components/AccountsTab';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import './App.css';
 
 // Acquire VS Code API singleton
@@ -20,6 +22,7 @@ const vscodeApi = (() => {
 // Export for other components
 (window as any).vscode = vscodeApi;
 const App: React.FC = () => {
+    const { t } = useTranslation(['dashboard', 'common']);
     const [autoAccept, setAutoAccept] = useState(false);
     const vscode = vscodeApi;
 
@@ -42,17 +45,18 @@ const App: React.FC = () => {
                     <div
                         className="px-3 h-full flex items-center text-[13px] font-medium border-b-2 border-vscode-info opacity-100"
                     >
-                        账户列表
+                        {t('dashboard:toolbar.accounts')}
                     </div>
                 </div>
 
-                <div className="flex items-center px-2">
+                <div className="flex items-center gap-4 px-2">
+                    <LanguageSwitcher />
                     <VSCodeCheckbox
                         checked={autoAccept}
                         onChange={toggleAutoAccept}
                         className="text-[12px] opacity-70"
                     >
-                        自动驾驶
+                        {t('dashboard:actions.autoPilot')}
                     </VSCodeCheckbox>
                 </div>
             </div>

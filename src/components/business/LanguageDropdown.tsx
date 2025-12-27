@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Dropdown, type MenuProps } from 'antd';
 import { Languages } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
-import { languages, type SupportedLanguage } from '@/i18n/types.ts';
+import { languages, type SupportedLanguage } from '@/i18n/config.ts';
 import { SettingsCommands } from '@/commands/SettingsCommands.ts';
 import { logger } from '@/lib/logger.ts';
 import toast from 'react-hot-toast';

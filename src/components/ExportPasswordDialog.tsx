@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, Download } from 'lucide-react';
 import { Modal } from "antd";
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 interface ExportPasswordDialogProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ const ExportPasswordDialog: React.FC<ExportPasswordDialogProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const {t} = useTranslation('import-export');
+  const { t } = useTranslation('importExport');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

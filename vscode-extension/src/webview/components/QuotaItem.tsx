@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { useTranslation } from 'react-i18next';
 interface QuotaItemProps {
     label: string;
     percentage: number | undefined;
@@ -29,6 +29,7 @@ const getQuotaColor = (percentage: number | undefined) => {
 };
 
 export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetText }) => {
+    const { t } = useTranslation(['dashboard']);
     const val = percentage !== undefined ? Math.round(percentage * 100) : '?';
     const showReset = percentage !== undefined && percentage < 1 && resetText;
 
@@ -38,7 +39,7 @@ export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetTe
                 <span className="opacity-80">{label}</span>
                 {showReset && (
                     <span className="text-xs opacity-70 ml-1">
-                        (重置于: {formatTime(resetText)})
+                        {t('dashboard:quota.resetAt', { time: formatTime(resetText) })}
                     </span>
                 )}
             </div>

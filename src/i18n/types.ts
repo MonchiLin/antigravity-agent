@@ -1,44 +1,25 @@
 import 'react-i18next';
 
 // Import translation files for type inference
-import type common from './locales/en/common.json';
+// We use 'en' as the source of truth for types
+import type common from '@/assets/locales/en/common.json';
+import type dashboard from '@/assets/locales/en/dashboard.json';
+import type account from '@/assets/locales/en/account.json';
+import type settings from '@/assets/locales/en/settings.json';
+import type notifications from '@/assets/locales/en/notifications.json';
+import type importExport from '@/assets/locales/en/import-export.json';
 
 declare module 'react-i18next' {
   interface CustomTypeOptions {
     defaultNS: 'common';
     resources: {
       common: typeof common;
+      dashboard: typeof dashboard;
+      account: typeof account;
+      settings: typeof settings;
+      notifications: typeof notifications;
+      importExport: typeof importExport;
     };
   }
 }
 
-// Supported languages
-export type SupportedLanguage = 'en' | 'zh-CN' | 'zh-TW';
-
-export interface LanguageConfig {
-  code: SupportedLanguage;
-  name: string;
-  nativeName: string;
-  flag: string; // Emoji flag
-}
-
-export const languages: LanguageConfig[] = [
-  {
-    code: 'en',
-    name: 'English',
-    nativeName: 'English',
-    flag: '🇺🇸',
-  },
-  {
-    code: 'zh-CN',
-    name: 'Simplified Chinese',
-    nativeName: '简体中文',
-    flag: '🇨🇳',
-  },
-  {
-    code: 'zh-TW',
-    name: 'Traditional Chinese',
-    nativeName: '繁體中文',
-    flag: '🇹🇼',
-  },
-];

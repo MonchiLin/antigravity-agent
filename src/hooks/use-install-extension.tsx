@@ -5,8 +5,8 @@ import { Modal } from 'antd';
 import React from 'react';
 
 // TODO: 替换为实际的 Antigravity 插件 ID
-const TARGET_EXTENSION_NAMESPACE = 'redhat';
-const TARGET_EXTENSION_NAME = 'java';
+const TARGET_EXTENSION_NAMESPACE = 'MonchiLin';
+const TARGET_EXTENSION_NAME = 'antigravity-vscode';
 const TARGET_EXTENSION_ID = `${TARGET_EXTENSION_NAMESPACE}.${TARGET_EXTENSION_NAME}`;
 const MANUAL_DOWNLOAD_PAGE = `https://open-vsx.org/extension/${TARGET_EXTENSION_NAMESPACE}/${TARGET_EXTENSION_NAME}`;
 

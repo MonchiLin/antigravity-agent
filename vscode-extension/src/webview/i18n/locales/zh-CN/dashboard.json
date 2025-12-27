@@ -1,0 +1,40 @@
+{
+  "toolbar": {
+    "accounts": "账户",
+    "searchPlaceholder": "搜索邮箱或昵称...",
+    "filterAll": "全部"
+  },
+  "sort": {
+    "name": "用户名首字母",
+    "geminiPro": "Gemini Pro 配额",
+    "claude": "Claude 配额",
+    "geminiFlash": "Gemini Flash 配额",
+    "geminiImage": "Gemini Image 配额",
+    "tier": "账户层次"
+  },
+  "emptyState": {
+    "title": "暂无账户信息",
+    "description": "在 Antigravity 登录账户后，本程序会自动读取。"
+  },
+  "actions": {
+    "loginNew": "登录新账户",
+    "import": "导入账户",
+    "exportAll": "导出所有账户",
+    "preferences": "偏好设置",
+    "autoPilot": "自动驾驶",
+    "loadingQuota": "正在加载配额..."
+  },
+  "quota": {
+    "resetAt": "(重置于: {{time}})"
+  },
+  "errorState": {
+    "title": "无法连接至 Antigravity Agent",
+    "description": "请先启动 Antigravity Agent。",
+    "notInstalled": "还未安装?",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "openInBrowser": "点击尝试在浏览器中打开",
+    "retry": "立即重试",
+    "reconnect": "{{seconds}} 秒后自动重连..."
+  }
+}

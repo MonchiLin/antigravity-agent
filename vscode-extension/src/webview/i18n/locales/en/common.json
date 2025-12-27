@@ -1,0 +1,39 @@
+{
+  "app": {
+    "name": "Antigravity Agent",
+    "loading": "Loading...",
+    "detecting": "Detecting Antigravity database...",
+    "detectingSubtitle": "Please wait, searching for Antigravity database path"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "close": "Close",
+    "submit": "Submit",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "ok": "OK"
+  },
+  "labels": {
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "search": "Search"
+  },
+  "messages": {
+    "success": "Operation successful",
+    "error": "An error occurred",
+    "confirm": "Are you sure?",
+    "noData": "No data available"
+  },
+  "status": {
+    "current": "Current",
+    "unknown": "Unknown"
+  },
+  "actions": {
+    "switch": "Switch"
+  }
+}

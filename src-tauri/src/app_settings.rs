@@ -22,7 +22,7 @@ pub struct AppSettings {
 }
 
 fn default_language() -> String {
-    "zh-CN".to_string()
+    "en".to_string()
 }
 
 fn default_private_mode() -> bool {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { VSCodeButton, VSCodeTag } from '@vscode/webview-ui-toolkit/react';
+import { useTranslation } from 'react-i18next';
 import { QuotaItem } from './QuotaItem';
 
 interface AccountData {
@@ -33,6 +34,8 @@ interface AccountCardProps {
 }
 
 export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurrent, onSwitch }) => {
+    const { t } = useTranslation(['common', 'dashboard']);
+
     return (
         <div className={`card flex flex-col gap-2.5 ${isCurrent ? 'card-active' : ''}`}>
             {/* Account Header */}
@@ -53,16 +56,16 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
                 <div className="flex gap-2 items-center">
                     {isCurrent && (
                         <VSCodeTag className="bg-vscode-info text-white">
-                            当前
+                            {t('common:status.current')}
                         </VSCodeTag>
                     )}
-                    <VSCodeTag>{account.context.plan?.slug || '未知'}</VSCodeTag>
+                    <VSCodeTag>{account.context.plan?.slug || t('common:status.unknown')}</VSCodeTag>
                     {!isCurrent && (
                         <VSCodeButton
                             appearance="secondary"
                             onClick={() => onSwitch(account.context.email)}
                         >
-                            切换
+                            {t('common:actions.switch')}
                         </VSCodeButton>
                     )}
                 </div>
@@ -71,7 +74,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
             {/* Quotas Section */}
             <div className="quota-section flex flex-col gap-2">
                 {!data ? (
-                    <div className="text-xs opacity-60">正在加载配额...</div>
+                    <div className="text-xs opacity-60">{t('dashboard:loadingQuota')}</div>
                 ) : (
                     <>
                         <QuotaItem label="Gemini Pro" percentage={data.geminiProQuote} resetText={data.geminiProQuoteRestIn} />

@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { Logger } from '../utils/logger';
 import { AutoAcceptManager } from './auto-accept-manager';
+import { TranslationManager } from './translation-manager';
 
 // Declare global function injected by Vite build or shim
-declare const __getWebviewHtml__: (options: any) => string;
+// declare const __getWebviewHtml__: (options: any) => string;
 
 /**
  * Manages the Antigravity Webview Panel.
@@ -14,7 +16,7 @@ export class AntigravityPanel {
     private static readonly viewType = 'antigravity';
 
     private readonly _panel: vscode.WebviewPanel;
-    private readonly _extensionUri: vscode.Uri;
+    private readonly _context: vscode.ExtensionContext;
     private _disposables: vscode.Disposable[] = [];
 
     /**
@@ -55,10 +57,10 @@ export class AntigravityPanel {
 
     private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
         this._panel = panel;
-        this._extensionUri = context.extensionUri;
+        this._context = context;
 
         // Set the webview's initial html content
-        this._update(context);
+        this._update();
 
         // Listen for when the panel is disposed
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
@@ -74,14 +76,16 @@ export class AntigravityPanel {
                             break;
                         case 'openExternal':
                             if (message.url) {
-                                vscode.window.showInformationMessage(`正在打开: ${message.url}`);
+                                const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
+                                vscode.window.showInformationMessage(t('msg.opening', message.url));
                                 vscode.env.openExternal(vscode.Uri.parse(message.url));
                             }
                             break;
                         case 'copyToClipboard':
                             if (message.text) {
+                                const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
                                 vscode.env.clipboard.writeText(message.text);
-                                vscode.window.showInformationMessage('链接已复制到剪贴板');
+                                vscode.window.showInformationMessage(t('msg.copied'));
                             }
                             break;
                     }
@@ -108,67 +112,50 @@ export class AntigravityPanel {
         }
     }
 
-    private _update(context: vscode.ExtensionContext) {
-        this._panel.webview.html = this._getHtmlForWebview(this._panel.webview, context);
+    private _update() {
+        this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview, context: vscode.ExtensionContext): string {
-        const isProduction = context.extensionMode === vscode.ExtensionMode.Production;
-        const devServerUrl = 'http://127.0.0.1:5199'; // Matches vite.config.ts
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        const nonce = getNonce();
 
-        if (!isProduction) {
-            // Development: Use the Vite Dev Server directly
-            // Using an iframe approach or directly loading the script
-            return `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Antigravity Agent</title>
-                <script type="module" src="${devServerUrl}/@vite/client"></script>
-                <script type="module">
-                    import RefreshRuntime from "${devServerUrl}/@react-refresh";
-                    RefreshRuntime.injectIntoGlobalHook(window);
-                    window.$RefreshReg$ = () => {};
-                    window.$RefreshSig$ = () => (type) => type;
-                    window.__vite_plugin_react_preamble_installed__ = true;
-                </script>
-                <script type="module" src="${devServerUrl}/src/webview/index.tsx"></script>
-                <style>
-                    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-                </style>
-            </head>
-            <body>
-                <div id="root"></div>
-            </body>
-            </html>`;
-        } else {
-            // Production: Load from dist/webview/index.html
-            const indexHtmlPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'webview', 'index.html');
-            // We can't synchronously read file in VSCode Ext Host efficiently without fs? 
-            // Actually 'fs' is Node.js, valid here.
-            const fs = require('fs');
-            const htmlPath = indexHtmlPath.fsPath;
+        // Always load from dist (Static Loading) to avoid HMR connection issues
+        // This ensures consistent behavior between Debugging (F5) and Production (VSIX)
+        try {
+            const distPath = vscode.Uri.joinPath(this._context.extensionUri, 'dist', 'webview');
+            const indexHtml = vscode.Uri.joinPath(distPath, 'index.html');
 
-            try {
-                let html = fs.readFileSync(htmlPath, 'utf-8');
+            let html = fs.readFileSync(indexHtml.fsPath, 'utf-8');
 
-                // Replace base path / assets with webview URIs
-                const onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'webview');
-                const webviewUri = webview.asWebviewUri(onDiskPath);
+            // Replace Placeholders using strict CSP logic
+            html = html.replace(/{{cspSource}}/g, webview.cspSource);
+            html = html.replace(/{{nonce}}/g, nonce);
 
-                // Replace ./assets with webviewUri/assets
-                html = html.replace(/(src|href)="(?:\.\/)?assets\//g, `$1="${webviewUri}/assets/`);
+            // Fix absolute asset paths to webview URIs
+            const rootUri = webview.asWebviewUri(distPath);
+            html = html.replace(/(href|src)="(\.?\/)?assets\//g, `$1="${rootUri}/assets/`);
 
-                return html;
-            } catch (e) {
-                Logger.log(`Failed to load index.html: ${e}`);
-                return `Failed to load UI: ${e}`;
-            }
+            // Inject Language
+            const languageScript = `<script nonce="${nonce}">window.VSCODE_LANGUAGE = "${vscode.env.language}";</script>`;
+            html = html.replace('</head>', `${languageScript}</head>`);
+
+            return html;
+        } catch (e) {
+            Logger.log(`Failed to load index.html: ${e}`);
+            return `Failed to load UI: ${e}`;
         }
     }
 
     public postMessage(message: any) {
         this._panel.webview.postMessage(message);
     }
+}
+
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }

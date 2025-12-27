@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
-import {Eye, EyeOff, Lock, Upload} from 'lucide-react';
-import {Modal} from "antd";
-import {useTranslation} from 'react-i18next';
+import React, { useState } from 'react';
+import { Eye, EyeOff, Lock, Upload } from 'lucide-react';
+import { Modal } from "antd";
+import { useTranslation } from 'react-i18next';
 
 interface ImportPasswordDialogProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ export const ImportPasswordDialog: React.FC<ImportPasswordDialogProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const {t} = useTranslation('import-export');
+  const { t } = useTranslation('importExport');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
@@ -68,7 +68,7 @@ export const ImportPasswordDialog: React.FC<ImportPasswordDialogProps> = ({
       open={isOpen}
       onCancel={() => onOpenChange(false)}
       title={<div className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-        <Upload className="h-5 w-5 text-antigravity-blue"/>
+        <Upload className="h-5 w-5 text-antigravity-blue" />
         {t('import.title')}
       </div>}
       okButtonProps={{
@@ -86,7 +86,7 @@ export const ImportPasswordDialog: React.FC<ImportPasswordDialogProps> = ({
           {/* 密码输入 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Lock className="h-4 w-4"/>
+              <Lock className="h-4 w-4" />
               {t('import.password')}
             </label>
             <div className="relative">
@@ -104,9 +104,9 @@ export const ImportPasswordDialog: React.FC<ImportPasswordDialogProps> = ({
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4"/>
+                  <EyeOff className="h-4 w-4" />
                 ) : (
-                  <Eye className="h-4 w-4"/>
+                  <Eye className="h-4 w-4" />
                 )}
               </button>
             </div>
