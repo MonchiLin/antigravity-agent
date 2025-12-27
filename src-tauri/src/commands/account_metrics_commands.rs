@@ -125,17 +125,21 @@ async fn process_account(email: String, proto_bytes: Vec<u8>) -> Result<AccountM
             access_token = new_token.clone();
             // Update Proto struct
             auth.access_token = new_token;
-            // TODO: Persist back to Disk/DB? 
-            // Writing back to disk is complex (re-encode -> write json). 
-            // For now, we return valid data. Persistence is a "Unknown" requirement but highly recommended.
-            // Let's implement persistence later or if requested. The primary goal is getting data.
+            // info!("new token {} refreshing...", access_token);
             fetch_user_info(&access_token).await.map_err(|e| format!("Retry fetch user info failed: {}", e))?
         }
     };
 
     // 4. Fetch Models
-    let project = fetch_code_assist_project(&access_token).await?;
-    let models_json = fetch_available_models(&access_token, &project).await?;
+    let project = fetch_code_assist_project(&access_token)
+        .await
+        .map_err(|e| format!("获取项目 ID 失败 (fetch_code_assist_project): {}", e))?;
+
+    info!("获取 project 成功 for {}", email);
+
+    let models_json = fetch_available_models(&access_token, &project)
+        .await
+        .map_err(|e| format!("获取模型列表失败 (fetch_available_models): {}", e))?;
 
     // 5. Parse Models
     let quotas = parse_quotas(&models_json);
@@ -193,7 +197,11 @@ async fn refresh_access_token(refresh_token: &str) -> Result<String, String> {
 }
 
 async fn fetch_code_assist_project(access_token: &str) -> Result<String, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
     let res = client
         .post(format!("{}/v1internal:loadCodeAssist", CLOUD_CODE_BASE_URL))
         .header(AUTHORIZATION, format!("Bearer {}", access_token))
@@ -209,7 +217,11 @@ async fn fetch_code_assist_project(access_token: &str) -> Result<String, String>
 }
 
 async fn fetch_available_models(access_token: &str, project: &str) -> Result<Value, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
     let body = serde_json::json!({ "project": project });
 
     let res = client
@@ -241,7 +253,7 @@ fn parse_quotas(models_json: &Value) -> Vec<QuotaItem> {
         for (key, name) in targets {
             if let Some(model_data) = map.get(key) {
                  if let Some(quota_info) = model_data.get("quotaInfo") {
-                     let percentage = quota_info.get("remainingFraction").and_then(|v| v.as_f64()).unwrap_or(-1.0);
+                     let percentage = quota_info.get("remainingFraction").and_then(|v| v.as_f64()).unwrap_or(0.0);
                      let reset_text = quota_info.get("resetTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
                      
                      items.push(QuotaItem {
