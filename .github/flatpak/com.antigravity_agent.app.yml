@@ -13,6 +13,36 @@ finish-args:
   - --share=network
   - --device=dri
 modules:
+  - name: libayatana-indicator
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DENABLE_TESTS=OFF
+      - -DENABLE_LOMIRI_FEATURES=OFF
+    sources:
+      - type: git
+        url: https://github.com/AyatanaIndicators/libayatana-indicator.git
+        tag: 0.9.4
+
+  - name: libayatana-appindicator
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DENABLE_TESTS=OFF
+      - -DENABLE_BINDINGS_MONO=OFF
+      - -DENABLE_LOMIRI_FEATURES=OFF
+    sources:
+      - type: git
+        url: https://github.com/AyatanaIndicators/libayatana-appindicator.git
+        tag: 0.5.93
+
+  - name: libxdo
+    buildsystem: simple
+    build-commands:
+      - make install PREFIX=/app
+    sources:
+      - type: git
+        url: https://github.com/jordansissel/xdotool.git
+        tag: v3.20211022.1
+
   - name: antigravity-agent
     buildsystem: simple
     build-options:
@@ -24,18 +54,11 @@ modules:
         npm_config_cache: /run/build/antigravity-agent/npm-cache
         tauri_build_profile: release
     build-commands:
-      # Install dependencies and build
       - npm install
       - npm run tauri build
-      
-      # Install binary
       - install -Dm755 src-tauri/target/release/antigravity-agent /app/bin/antigravity-agent
-      
-      # Install resources
       - install -Dm644 .github/flatpak/antigravity-agent.desktop /app/share/applications/com.antigravity_agent.app.desktop
       - install -Dm644 .github/flatpak/com.antigravity_agent.app.metainfo.xml /app/share/metainfo/com.antigravity_agent.app.metainfo.xml
-      
-      # Install icons
       - install -Dm644 src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/com.antigravity_agent.app.png
       - install -Dm644 src-tauri/icons/icon.png /app/share/icons/hicolor/512x512/apps/com.antigravity_agent.app.png
     sources:
