@@ -8,6 +8,10 @@ import { LineShadowText } from "@/components/ui/line-shadow-text.tsx";
 import UpdateBadge from "@/components/business/UpdateBadge.tsx";
 import { useTranslation } from 'react-i18next';
 import { LanguageDropdown } from '@/components/business/LanguageDropdown.tsx';
+import { useAntigravityAccount } from '@/modules/use-antigravity-account.ts';
+import { AccountTriggerCommands } from '@/commands/AccountTriggerCommands.ts';
+import toast from 'react-hot-toast';
+import { RefreshCw } from "lucide-react";
 
 export type ListSortKey = 'name' | 'claude' | 'gemini-pro' | 'gemini-flash' | 'gemini-image' | 'tier';
 export type ListToolbarValue = {
@@ -80,6 +84,80 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
   const tierUiMap = useTierUiMap();
   const normalizedTiers = tiers && tiers.length > 0 ? tiers : null;
   const selectedTiers = normalizedTiers ?? [];
+
+  const { accounts } = useAntigravityAccount();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefreshAll = async () => {
+    console.log("REFRESH: Button Clicked");
+    if (isRefreshing) return;
+    if (accounts.length === 0) {
+      toast.error(t('toolbar.noAccounts'));
+      return;
+    }
+
+    setIsRefreshing(true);
+    const toastId = toast.loading(t('toolbar.refreshingQuota'));
+    let triggeredCount = 0;
+    let successAccountCount = 0;
+
+    try {
+      // Run in parallel chunks or serial? Serial is safer for Rate Limits if any.
+      // But user wants speed. Let's do batches of 3.
+      const chunk = (arr: any[], size: number) =>
+        Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+          arr.slice(i * size, i * size + size)
+        );
+
+      const batches = chunk(accounts, 3);
+
+      for (const batch of batches) {
+        const promises = batch.map(acc => {
+          console.log("REFRESH: Triggering for", acc.context.email);
+          toast(t('toolbar.refreshingQuota') + ' ' + acc.context.email, { id: 'refresh-' + acc.context.email });
+
+          return AccountTriggerCommands.triggerQuotaRefresh(acc.context.email)
+            .then(res => {
+              console.log("REFRESH: Result for", acc.context.email, res);
+              if (res.triggered_models.length > 0) {
+                toast.success(`Done ${acc.context.email}: ${res.triggered_models.length} triggered`, { duration: 3000 });
+              }
+
+              if (res.failed_models && res.failed_models.length > 0) {
+                toast.error(`Errors ${acc.context.email}: ${res.failed_models.join(", ")}`, { duration: 5000 });
+              }
+
+              if (res.triggered_models.length === 0 && (!res.failed_models || res.failed_models.length === 0)) {
+                const reasons = res.skipped_details && res.skipped_details.length > 0
+                  ? res.skipped_details.join(", ")
+                  : "Unknown";
+                toast(`Skipped ${acc.context.email}: ${reasons}`, { icon: 'ℹ️', duration: 5000 });
+              }
+
+              if (res.triggered_models.length > 0) {
+                triggeredCount += res.triggered_models.length;
+                successAccountCount++;
+              }
+              return res;
+            })
+            .catch(e => {
+              console.error("Refresh failed for", acc.context.email, e);
+              // Fallback to alert if toast fails
+              // alert(`Refreh Error for ${acc.context.email}: ${e}`);
+              toast.error(`Fail ${acc.context.email}: ${e}`, { duration: 3000 });
+              return null;
+            })
+        });
+        await Promise.all(promises);
+      }
+
+      toast.success(t('toolbar.refreshComplete', { count: triggeredCount }), { id: toastId });
+    } catch (e) {
+      toast.error(t('toolbar.refreshError'), { id: toastId });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ query: e.target.value, sortKey, tiers: normalizedTiers });
@@ -227,6 +305,22 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
         {/* 语言切换器：新增 */}
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
         <LanguageDropdown />
+
+        {/* Refresh All Button */}
+        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+        <button
+          onClick={handleRefreshAll}
+          disabled={isRefreshing}
+          className={cn(
+            "p-1.5 rounded-lg border transition-colors relative group",
+            "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700",
+            "hover:bg-white dark:hover:bg-slate-700",
+            isRefreshing ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+          )}
+          title={t('toolbar.refreshQuotaTooltip')}
+        >
+          <RefreshCw className={cn("h-4 w-4 text-slate-600 dark:text-slate-300", isRefreshing && "animate-spin")} />
+        </button>
       </div>
     </div>
   );

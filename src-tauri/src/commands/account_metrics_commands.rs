@@ -2,10 +2,11 @@ use base64::Engine;
 use prost::Message;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::fs;
 use tauri::State;
-use tracing::{info, instrument};
+use tracing::{info, error, instrument};
+use std::collections::HashMap;
 
 // --- Data Structures ---
 
@@ -28,12 +29,6 @@ pub struct AccountMetrics {
 struct UserInfoResponse {
     id: String,
     picture: String,
-}
-
-#[derive(Deserialize)]
-struct LoadCodeAssistResponse {
-    #[serde(rename = "cloudaicompanionProject")]
-    cloudaicompanion_project: String,
 }
 
 #[derive(Deserialize)]
@@ -125,7 +120,6 @@ async fn process_account(email: String, proto_bytes: Vec<u8>) -> Result<AccountM
             access_token = new_token.clone();
             // Update Proto struct
             auth.access_token = new_token;
-            // info!("new token {} refreshing...", access_token);
             fetch_user_info(&access_token).await.map_err(|e| format!("Retry fetch user info failed: {}", e))?
         }
     };
@@ -212,8 +206,27 @@ async fn fetch_code_assist_project(access_token: &str) -> Result<String, String>
         .await
         .map_err(|e| e.to_string())?;
 
-    let json: LoadCodeAssistResponse = res.json().await.map_err(|e| e.to_string())?;
-    Ok(json.cloudaicompanion_project)
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if !status.is_success() {
+         return Err(format!("loadCodeAssist failed status {}: {}", status, text));
+    }
+
+    let json: Value = serde_json::from_str(&text).map_err(|e| {
+        format!("Failed to parse project response (Metrics): {} | Raw Body: {:.100}", e, text)
+    })?;
+
+    // Try to find project ID in various possible fields
+    let project_id = json.get("cloudaicompanionProject")
+        .or_else(|| json.get("project"))
+        .or_else(|| json.get("projectId"))
+        .and_then(|v| v.as_str());
+
+    match project_id {
+        Some(id) => Ok(id.to_string()),
+        None => Err("Project ID missing in loadCodeAssist response (Metrics)".to_string())
+    }
 }
 
 async fn fetch_available_models(access_token: &str, project: &str) -> Result<Value, String> {
@@ -234,7 +247,8 @@ async fn fetch_available_models(access_token: &str, project: &str) -> Result<Val
         .await
         .map_err(|e| e.to_string())?;
 
-    res.json::<Value>().await.map_err(|e| e.to_string())
+    let val: Value = res.json().await.map_err(|e| e.to_string())?;
+    Ok(val)
 }
 
 fn parse_quotas(models_json: &Value) -> Vec<QuotaItem> {

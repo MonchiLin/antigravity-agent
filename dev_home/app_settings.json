@@ -1,0 +1,6 @@
+{
+  "system_tray_enabled": false,
+  "silent_start_enabled": false,
+  "debug_mode": true,
+  "private_mode": false
+}

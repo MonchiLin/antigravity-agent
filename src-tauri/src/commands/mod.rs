@@ -27,6 +27,7 @@ pub mod db_monitor_commands;
 
 // 账户指标命令
 pub mod account_metrics_commands;
+pub mod account_trigger_commands;
 // 扩展安装命令
 pub mod extension_commands;
 // 语言服务器相关命令（在 src/language_server 下）
@@ -36,6 +37,7 @@ pub use account_commands::*;
 pub use account_manage_commands::*;
 pub use db_monitor_commands::*;
 pub use account_metrics_commands::*;
+pub use account_trigger_commands::*;
 pub use logging_commands::*;
 pub use platform_commands::*;
 pub use process_commands::*;

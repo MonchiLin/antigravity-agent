@@ -2,7 +2,12 @@
   "toolbar": {
     "accounts": "Accounts",
     "searchPlaceholder": "Search email or nickname...",
-    "filterAll": "All"
+    "filterAll": "All",
+    "refreshQuotaTooltip": "Refresh Quota (Send minimal tokens to reset timer)",
+    "refreshingQuota": "Triggering minimal quota queries...",
+    "refreshComplete": "Refresh triggered for {{count}} models",
+    "refreshError": "Failed to trigger quota refresh",
+    "noAccounts": "No accounts available"
   },
   "sort": {
     "name": "Username (A-Z)",

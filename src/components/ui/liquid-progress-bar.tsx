@@ -7,7 +7,7 @@ import GeminiImageIcon from '@/assets/icons/nano_banana.png'
 import GeminiProIcon from '@/assets/icons/gemini_pro.png'
 import GeminiFlashIcon from '@/assets/icons/gemini_flash.png'
 import dayjs from "dayjs";
-import {Tooltip} from "antd";
+import { Tooltip } from "antd";
 
 type LiquidProgressBarType = 'gemini-pro' | 'gemini-flash' | 'claude' | 'gemini-image';
 
@@ -91,8 +91,8 @@ export function LiquidProgressBar({
     const isUnknown = percentage === -1;
     const safePercentage = isUnknown ? 0 : Math.min(100, Math.max(0, Math.round(percentage * 100)));
 
-    // Logic: "If percentage is 1 then do not show resetIn"
-    const showTimer = resetIn && percentage !== 1 && !isUnknown;
+    // Logic: Always show resetIn if available (User Request) to verify refresh trigger
+    const showTimer = resetIn && !isUnknown;
 
     const relativeTime = useMemo(() => dayjs().to(dayjs(resetIn), true), [resetIn]);
 

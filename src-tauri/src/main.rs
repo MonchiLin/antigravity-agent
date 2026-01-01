@@ -138,6 +138,7 @@ fn main() {
             // 账户基础命令
             get_antigravity_accounts,
             get_account_metrics,
+            trigger_quota_refresh,
             get_current_antigravity_account_info,
             save_antigravity_current_account,
             restore_antigravity_account,

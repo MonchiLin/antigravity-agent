@@ -114,7 +114,6 @@ pub fn init(app_handle: tauri::AppHandle, state: Arc<parking_lot::Mutex<AppState
                     .service(get_accounts)
                     .service(switch_account)
                     .service(get_account_metrics_http)
-                    .service(get_account_metrics_http)
                     .service(get_current_account_http)
             })
             .bind(("127.0.0.1", 18888));
