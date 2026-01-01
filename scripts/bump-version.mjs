@@ -31,6 +31,7 @@ const expectedFiles = [
   "package-lock.json",
   path.join("src-tauri", "tauri.conf.json"),
   path.join("src-tauri", "Cargo.toml"),
+  path.join("vscode-extension", "package.json"),
 ];
 
 function run(cmd, opts = {}) {
@@ -156,6 +157,13 @@ async function bumpCargoToml(version) {
   await writeFile(file, lines.join("\n"), "utf8");
 }
 
+async function bumpVsCodeExtension(version) {
+  const file = path.join("vscode-extension", "package.json");
+  const pkg = JSON.parse(await readFile(file, "utf8"));
+  pkg.version = version;
+  await writeFile(file, JSON.stringify(pkg, null, 4) + "\n", "utf8");
+}
+
 function verifyOnlyExpectedChanged() {
   const diffNames = run("git diff --name-only");
   const changed = diffNames ? diffNames.split(/\r?\n/).filter(Boolean) : [];
@@ -222,6 +230,7 @@ async function main() {
   await bumpPackageLock(version);
   await bumpTauriConf(version);
   await bumpCargoToml(version);
+  await bumpVsCodeExtension(version);
 
   verifyOnlyExpectedChanged();
   ensureTagAvailable(version);

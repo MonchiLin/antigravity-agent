@@ -1,0 +1,29 @@
+/* AccountsTab 专用样式 */
+.accounts-container {
+    padding: 24px;
+    width: 100%;
+}
+
+.accounts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--vscode-widget-border);
+}
+
+.accounts-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    margin: 0;
+}
+
+.accounts-grid {
+    display: grid;
+    /* Strict 2-column grid as requested */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    width: 100%;
+}

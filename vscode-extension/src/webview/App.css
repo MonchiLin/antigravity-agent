@@ -1,0 +1,16 @@
+/* App 容器样式 */
+.app-container {
+    width: 100%;
+}
+
+/* 确保 VSCodePanels 占满空间 */
+.panels-full-width {
+    width: 100% !important;
+}
+
+/* Panel View 内容区域 */
+.panel-view {
+    width: 100% !important;
+    padding: 12px;
+    box-sizing: border-box;
+}

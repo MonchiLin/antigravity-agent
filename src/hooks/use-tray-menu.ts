@@ -44,7 +44,7 @@ export function useTrayMenu() {
     return () => {
       unlisten.then(f => f());
     };
-  }, []);
+  }, [switchToAccount]);
 
   // 当账户列表变化时更新托盘菜单
   useEffect(() => {
@@ -56,5 +56,5 @@ export function useTrayMenu() {
       // 没有账户时清空托盘菜单
       updateTrayMenu([]);
     }
-  }, [accounts]);
+  }, [accounts.length]);
 }

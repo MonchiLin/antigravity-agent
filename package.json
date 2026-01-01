@@ -1,7 +1,7 @@
 {
   "name": "antigravity-agent",
   "private": true,
-  "version": "1.5.3",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "tauri:build:local": "tauri build --no-bundle",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -19,6 +20,8 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/noto-sans-sc": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
@@ -37,11 +40,14 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
     "events": "^3.3.0",
+    "i18next": "^25.7.3",
+    "i18next-browser-languagedetector": "^8.2.0",
     "lucide-react": "^0.556.0",
     "motion": "^12.23.26",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-hot-toast": "^2.6.0",
+    "react-i18next": "^16.5.0",
     "tailwind-merge": "^2.6.0",
     "zustand": "^5.0.8"
   },
@@ -58,6 +64,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@types/react-i18next": "^7.8.3",
     "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/browser-playwright": "^4.0.15",

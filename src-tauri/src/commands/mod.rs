@@ -24,14 +24,21 @@ pub mod settings_commands;
 
 // 数据库监控命令
 pub mod db_monitor_commands;
+
+// 账户指标命令
+pub mod account_metrics_commands;
+// 扩展安装命令
+pub mod extension_commands;
 // 语言服务器相关命令（在 src/language_server 下）
 
 // 重新导出所有命令，保持与 main.rs 的兼容性
 pub use account_commands::*;
 pub use account_manage_commands::*;
 pub use db_monitor_commands::*;
+pub use account_metrics_commands::*;
 pub use logging_commands::*;
 pub use platform_commands::*;
 pub use process_commands::*;
 pub use settings_commands::*;
 pub use tray_commands::*;
+pub use extension_commands::*;

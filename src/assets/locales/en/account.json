@@ -1,0 +1,44 @@
+{
+  "actions": {
+    "delete": "Delete",
+    "use": "Use"
+  },
+  "tooltip": {
+    "currentSession": "Current Session"
+  },
+  "warning": {
+    "unknownTier": {
+      "title": "This symbol means the built-in data does not cover the current account tier",
+      "description": "This is not your fault. To help resolve this, please take a screenshot",
+      "reportLink": "Report to Developer"
+    }
+  },
+  "accountDetail": {
+    "title": "User Details",
+    "apiKey": "API Key"
+  },
+  "delete": {
+    "title": "Confirm Account Deletion",
+    "message": "Are you sure you want to delete account \"{{email}}\"? This action cannot be undone.",
+    "success": "Account \"{{email}}\" deleted successfully"
+  },
+  "clearAll": {
+    "title": "Confirm Clear All Backups",
+    "message": "This operation will permanently delete all {{count}} accounts and cannot be recovered. Are you sure you want to continue?",
+    "success": "All backups cleared successfully",
+    "error": "Failed to clear backups: {{error}}",
+    "noBackups": "No user backups available to clear"
+  },
+  "switch": {
+    "loading": "Switching to user: {{email}}..."
+  },
+  "loginNew": {
+    "title": "Login New Account",
+    "confirmMessage": "Are you sure you want to close Antigravity and login with a new account?",
+    "details": "This operation will:",
+    "step1": "Close all Antigravity processes",
+    "step2": "Clear Antigravity user information",
+    "step3": "Automatically restart Antigravity",
+    "warning": "Note: The system will automatically start Antigravity, please save all important work"
+  }
+}

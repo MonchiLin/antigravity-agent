@@ -1,6 +1,6 @@
 [package]
 name = "antigravity-agent"
-version = "1.5.3"
+version = "1.6.0"
 description = "Antigravity Agent - Account management tool"
 authors = ["Kiki"]
 edition = "2021"
@@ -33,6 +33,15 @@ regex = "1.10"
 sysinfo = "0.30"
 prost = "0.12"
 log = "0.4.28"
+actix-web = "4.12.1"
+actix-cors = "0.7.1"
+parking_lot = "0.12.5"
+reqwest = { version = "0.12.28", features = ["json", "rustls-tls", "stream"] }
+tempfile = "3.10"
+futures-util = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+
 
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }

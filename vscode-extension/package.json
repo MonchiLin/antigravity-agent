@@ -1,0 +1,72 @@
+{
+    "name": "antigravity-agent",
+    "displayName": "Antigravity Agent",
+    "description": "Manage your Antigravity accounts directly from VS Code",
+    "version": "1.6.0",
+    "icon": "images/icon.png",
+    "type": "module",
+    "publisher": "MonchiLin",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MonchiLin/antigravity-agent"
+    },
+    "engines": {
+        "vscode": "^1.104.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "antigravity.agent.open_dashboard",
+                "title": "Open Antigravity Agent Dashboard"
+            }
+        ]
+    },
+    "scripts": {
+        "dev": "npm run build:extension -- --watch",
+        "build": "npm run build:extension && npm run build:webview",
+        "build:extension": "vite build --config vite.extension.config.ts",
+        "build:webview": "vite build --config vite.webview.config.ts",
+        "watch": "npm run build:extension -- --watch",
+        "check": "tsc --noEmit",
+        "package": "npm run check && npm run build",
+        "vscode:prepublish": "npm run package",
+        "vsix": "npx vsce package --no-dependencies",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.18",
+        "@tailwindcss/vite": "^4.1.18",
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^25.0.3",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@types/vscode": "^1.104.0",
+        "@vitejs/plugin-react": "^5.1.2",
+        "@vscode/test-electron": "^2.5.2",
+        "autoprefixer": "^10.4.23",
+        "glob": "^8.1.0",
+        "mocha": "^10.8.2",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.18",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.0"
+    },
+    "dependencies": {
+        "@vscode/codicons": "^0.0.44",
+        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "i18next": "^25.7.3",
+        "i18next-browser-languagedetector": "^8.2.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-i18next": "^16.5.0",
+        "zustand": "^5.0.9"
+    }
+}

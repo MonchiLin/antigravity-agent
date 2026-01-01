@@ -1,0 +1,55 @@
+{
+  "title": "設定",
+  "version": "v{{version}}",
+  "paths": {
+    "executable": "Antigravity 可執行檔",
+    "logDirectory": "日誌目錄",
+    "openLogDirectory": "開啟日誌目錄",
+    "notSet": "未設定",
+    "autoDetected": " (自動檢測)"
+  },
+  "dialogs": {
+    "selectExecutable": "選擇 Antigravity 可執行檔",
+    "executableFilter": "可執行檔",
+    "allFilesFilter": "所有檔案"
+  },
+  "toggles": {
+    "systemTray": {
+      "title": "系統托盤",
+      "description": "關閉視窗時最小化到托盤"
+    },
+    "silentStart": {
+      "title": "靜默啟動",
+      "description": "啟動時自動隱藏主視窗"
+    },
+    "privateMode": {
+      "title": "隱私模式",
+      "description": "對敏感資訊進行混淆"
+    },
+    "debugMode": {
+      "title": "偵錯模式",
+      "description": "記錄更多日誌（切換後自動重啟程式）"
+    }
+  },
+  "language": {
+    "title": "語言",
+    "description": "更改介面語言",
+    "changeSuccess": "語言切換成功",
+    "changeError": "語言切換失敗",
+    "change": "切換語言"
+  },
+  "links": {
+    "issues": "遇到問題/請求新功能"
+  },
+  "extension": {
+    "fetchingInfo": "正在獲取外掛資訊...",
+    "fetchFailed": "無法獲取外掛資訊: {{status}}",
+    "parseVersionFailed": "無法解析外掛版本號",
+    "downloading": "正在下載並安裝 {{id}} v{{version}}...",
+    "installFailed": "安裝失敗",
+    "installFailedTitle": "外掛安裝失敗",
+    "installFailedError": "自動安裝遇到錯誤：{{error}}",
+    "installFailedManual": "您可以嘗試手動下載並安裝：",
+    "okButton": "好的"
+  }
+}

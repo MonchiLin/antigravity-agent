@@ -1,0 +1,26 @@
+{
+  "import": {
+    "title": "匯入設定檔",
+    "password": "密碼",
+    "passwordPlaceholder": "請輸入密碼",
+    "submitButton": "匯入",
+    "cancelButton": "取消"
+  },
+  "export": {
+    "title": "匯出設定檔",
+    "description": "請設定匯出密碼，用於保護您的設定檔",
+    "password": "密碼",
+    "confirmPassword": "確認密碼",
+    "passwordPlaceholder": "請輸入密碼",
+    "confirmPasswordPlaceholder": "請確認密碼",
+    "submitButton": "匯出",
+    "cancelButton": "取消"
+  },
+  "validation": {
+    "passwordRequired": "請輸入密碼",
+    "passwordTooShort": "密碼長度至少為4位",
+    "passwordTooLong": "密碼長度不能超過50位",
+    "passwordInvalid": "密碼無效",
+    "passwordMismatch": "兩次輸入的密碼不一致"
+  }
+}

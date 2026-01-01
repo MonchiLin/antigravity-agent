@@ -1,0 +1,34 @@
+{
+    "dialog": {
+        "title": "Update Available",
+        "errorTitle": "Update Failed",
+        "currentVersion": "Current Version:",
+        "latestVersion": "Latest Version:",
+        "releaseNotes": "Release Notes:",
+        "ignore": "Ignore This Version",
+        "updateNow": "Update Now",
+        "downloadProgress": "Download Progress",
+        "downloadingDesc": "Downloading update package, please wait...",
+        "readyTitle": "Update Downloaded",
+        "readyDesc": "Click 'Restart Now' to install the new version",
+        "restartLater": "Restart Later",
+        "restartNow": "Restart Now"
+    },
+    "badge": {
+        "available": "Update Available",
+        "restart": "Restart to Update",
+        "failed": "Update Failed",
+        "default": "Update"
+    },
+    "toast": {
+        "downloadComplete": "Update package downloaded, click restart to install",
+        "installing": "Installing update and restarting application..."
+    },
+    "tooltip": {
+        "failed": "Update Failed: {{error}}",
+        "available": "New version v{{version}} available, click to view",
+        "downloading": "Downloading update {{percentage}}%",
+        "ready": "Update downloaded, click to restart and install",
+        "check": "Click to check for updates"
+    }
+}

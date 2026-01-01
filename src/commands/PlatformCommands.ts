@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { universalInvoke } from '@/lib/invoke-adapter';
 import type { PlatformInfo, DetectionResult, PathConfig } from './types/platform.types';
 
 /**
@@ -10,7 +10,7 @@ export class PlatformCommands {
    * @returns 平台信息，包含操作系统、架构、路径等
    */
   static async getInfo(): Promise<PlatformInfo> {
-    return invoke('get_platform_info');
+    return universalInvoke('get_platform_info');
   }
 
   /**
@@ -18,7 +18,7 @@ export class PlatformCommands {
    * @returns 所有可能的安装路径
    */
   static async findInstallations(): Promise<string[]> {
-    return invoke('find_antigravity_installations');
+    return universalInvoke('find_antigravity_installations');
   }
 
   /**
@@ -26,7 +26,7 @@ export class PlatformCommands {
    * @returns 检测结果
    */
   static async detectInstallation(): Promise<DetectionResult> {
-    return invoke('detect_antigravity_installation');
+    return universalInvoke('detect_antigravity_installation');
   }
 
   /**
@@ -34,7 +34,7 @@ export class PlatformCommands {
    * @returns 检测结果
    */
   static async detectExecutable(): Promise<DetectionResult> {
-    return invoke('detect_antigravity_executable');
+    return universalInvoke('detect_antigravity_executable');
   }
 
   /**
@@ -43,7 +43,7 @@ export class PlatformCommands {
    * @returns 是否有效
    */
   static async validateExecutable(path: string): Promise<boolean> {
-    return invoke('validate_antigravity_executable', { path });
+    return universalInvoke('validate_antigravity_executable', { path });
   }
 
   /**
@@ -52,7 +52,7 @@ export class PlatformCommands {
    * @returns 保存结果消息
    */
   static async saveAntigravityExecutable(path: string): Promise<string> {
-    return invoke('save_antigravity_executable', { path });
+    return universalInvoke('save_antigravity_executable', { path });
   }
 
   /**
@@ -60,6 +60,6 @@ export class PlatformCommands {
    * @returns 路径配置
    */
   static async getCurrentPaths(): Promise<PathConfig> {
-    return invoke('get_current_paths');
+    return universalInvoke('get_current_paths');
   }
 }

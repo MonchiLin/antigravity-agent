@@ -5,6 +5,7 @@ import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern.tsx";
 import { maskEmail, maskName } from "@/lib/string-masking.ts";
 import {UserTier} from "@/modules/use-account-addition-data.ts";
 import {useAppSettings} from "@/modules/use-app-settings.ts";
+import {useTranslation} from 'react-i18next';
 
 export interface AccountSessionListAccountItem {
   geminiProQuote: number | -1
@@ -73,6 +74,7 @@ export function AccountSessionList({
                                      onSwitch,
                                      onDelete,
                                    }: AccountSessionListProps) {
+  const {t} = useTranslation('dashboard');
   const privateMode = useAppSettings(state => state.privateMode);
 
   return (
@@ -130,10 +132,10 @@ export function AccountSessionList({
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            暂无账户信息
+            {t('emptyState.title')}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md leading-relaxed">
-            在 Antigravity 登录账户后，本程序会自动读取。
+            {t('emptyState.description')}
           </p>
         </motion.div>
       )}

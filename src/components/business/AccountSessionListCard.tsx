@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-motion';
 import { Tooltip } from 'antd';
 import { cn } from "@/lib/utils.ts";
@@ -109,6 +110,7 @@ const childVariants: Variants = {
 };
 
 export function AccountSessionListCard(props: UserSessionCardProps) {
+  const { t } = useTranslation(['account', 'common']);
   let { tier } = props;
   const unknownTier = !["free-tier", "g1-pro-tier", "g1-ultra-tier"].includes(tier);
 
@@ -160,7 +162,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
       }}
     >
 
-      {props.isCurrentUser && <div title={"当前会话"} className="flex items-center gap-1 mt-1 h-2 absolute top-1.5 right-1.5">
+      {props.isCurrentUser && <div title={t('account:tooltip.currentSession')} className="flex items-center gap-1 mt-1 h-2 absolute top-1.5 right-1.5">
         <div className="w-1 h-2 bg-blue-500 rounded-full animate-[bounce_1s_infinite]"></div>
         <div className="w-1 h-3 bg-blue-500 rounded-full animate-[bounce_1s_infinite_100ms]"></div>
         <div className="w-1 h-1.5 bg-blue-500 rounded-full animate-[bounce_1s_infinite_200ms]"></div>
@@ -218,7 +220,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
                 </h2>
               </Tooltip>
               <div className="mt-0.5 shrink-0">
-                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md leading-none border border-gray-200 shadow-sm">Unknown</span>}
+                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md leading-none border border-gray-200 shadow-sm">{t('common:status.unknown')}</span>}
               </div>
             </div>
             <Tooltip title={props.email} styles={{ container: tooltipInnerStyle }}>
@@ -293,7 +295,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
             variant="outline"
             leftIcon={<ArrowLeftRight className={"w-3 h-3"} />}
           >
-            使用
+            {t('account:actions.use')}
           </BaseButton>
           <BaseButton
             onClick={e => {
@@ -304,7 +306,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
             variant="ghost"
             rightIcon={<Trash2 className={"w-3 h-3"} />}
           >
-            删除
+            {t('account:actions.delete')}
           </BaseButton>
         </motion.div>
       </div>
@@ -313,10 +315,10 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           <Tooltip title={
             <div className="flex flex-col gap-0.5">
               <span>
-                当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级 <span className="font-mono bg-white/10 px-1 rounded">[{props.tier}]</span>
+                {t('account:warning.unknownTier.title')} <span className="font-mono bg-white/10 px-1 rounded">[{props.tier}]</span>
               </span>
               <span>
-                这不是您的问题, 为了解决这个问题, 您可以将该提示截图 <a href="https://github.com/MonchiLin/antigravity-agent/issues" target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200 underline decoration-auto underline-offset-2">提供给开发者</a>
+                {t('account:warning.unknownTier.description')} <a href="https://github.com/MonchiLin/antigravity-agent/issues" target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200 underline decoration-auto underline-offset-2">{t('account:warning.unknownTier.reportLink')}</a>
               </span>
             </div>
           }>
@@ -338,6 +340,7 @@ function UsageItem({ label, percentage, color, trackColor }: {
   color: string,
   trackColor: string
 }) {
+  const { t } = useTranslation('common');
   const isUnknown = percentage === -1;
   const displayPercentage = isUnknown ? 0 : Math.round(percentage * 100);
 
@@ -346,7 +349,7 @@ function UsageItem({ label, percentage, color, trackColor }: {
       <div className="flex justify-between mb-2 text-sm">
         <span className="text-slate-700 font-medium">{label}</span>
         <span className="text-slate-400 font-mono tabular-nums">
-          {isUnknown ? 'Unknown' : `${displayPercentage}%`}
+          {isUnknown ? t('common:status.unknown') : `${displayPercentage}%`}
         </span>
       </div>
       <div className={cn("h-2.5 w-full rounded-full overflow-hidden transition-colors duration-300", trackColor)}>

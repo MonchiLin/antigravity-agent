@@ -1,12 +1,13 @@
-import React, {useState} from 'react';
-import {useUpdateChecker} from '@/hooks/use-update-checker.ts';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useUpdateChecker } from '@/hooks/use-update-checker.ts';
 import toast from 'react-hot-toast';
-import {logger} from '@/lib/logger.ts';
+import { logger } from '@/lib/logger.ts';
 import BusinessUpdateDialog from '@/components/business/UpdateDialog.tsx';
-import {cn} from '@/lib/utils.ts';
-import {AlertTriangle, Download, Loader2, RotateCw} from 'lucide-react';
-import type {DownloadProgress, UpdateInfo, UpdateState} from '@/services/updateService.ts';
-import {Tooltip} from "antd";
+import { cn } from '@/lib/utils.ts';
+import { AlertTriangle, Download, Loader2, RotateCw } from 'lucide-react';
+import type { DownloadProgress, UpdateInfo, UpdateState } from '@/services/updateService.ts';
+import { Tooltip } from "antd";
 
 type BadgeVariant = 'secondary' | 'destructive' | 'success' | 'warning';
 
@@ -68,6 +69,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
   autoCheck = true,
   className,
 }) => {
+  const { t } = useTranslation('update');
 
   // 使用自动更新检查 Hook
   const {
@@ -101,7 +103,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
   const handleStartDownload = async () => {
     try {
       await startDownload();
-      toast.success('更新包下载完成，点击重启按钮安装');
+      toast.success(t('toast.downloadComplete'));
     } catch (error) {
       // 只在控制台打印错误，不提示用户
       logger.error('下载失败', {
@@ -115,7 +117,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
   // 处理安装并重启
   const handleInstallAndRelaunch = async () => {
     try {
-      toast('正在安装更新并重启应用...');
+      toast(t('toast.installing'));
       await installAndRelaunch();
       // 如果成功，应用会重启，这里的代码不会执行
     } catch (error) {
@@ -130,7 +132,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
 
 
   if (updateState === 'no-update') {
-        return null;
+    return null;
   }
 
   const badgeVariant: BadgeVariant = updateError
@@ -147,7 +149,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
         return (
           <>
             <Download className="h-3.5 w-3.5" />
-            <span>有更新</span>
+            <span>{t('badge.available')}</span>
           </>
         );
       case 'downloading':
@@ -161,35 +163,35 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
         return (
           <>
             <RotateCw className="h-3.5 w-3.5" />
-            <span>重启更新</span>
+            <span>{t('badge.restart')}</span>
           </>
         );
       case 'error':
         return (
           <>
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>更新失败</span>
+            <span>{t('badge.failed')}</span>
           </>
         );
       default:
         return (
           <>
             <Download className="h-3.5 w-3.5" />
-            <span>更新</span>
+            <span>{t('badge.default')}</span>
           </>
         );
     }
   })();
 
   const tooltipContent = updateError
-    ? `更新失败：${updateError}`
+    ? t('tooltip.failed', { error: updateError })
     : updateState === 'update-available' && updateInfo
-      ? `发现新版本 v${updateInfo.version}，点击查看`
+      ? t('tooltip.available', { version: updateInfo.version })
       : updateState === 'downloading'
-        ? `正在下载更新 ${downloadProgress?.percentage ?? 0}%`
+        ? t('tooltip.downloading', { percentage: downloadProgress?.percentage ?? 0 })
         : updateState === 'ready-to-install'
-          ? '更新已下载，点击重启安装'
-          : '点击查看更新';
+          ? t('tooltip.ready')
+          : t('tooltip.check');
 
   return (
     <>

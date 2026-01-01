@@ -1,0 +1,39 @@
+{
+  "app": {
+    "name": "Antigravity Agent",
+    "loading": "加载中...",
+    "detecting": "正在检测 Antigravity 数据库...",
+    "detectingSubtitle": "请稍候，正在查找 Antigravity 数据库路径"
+  },
+  "buttons": {
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "close": "关闭",
+    "submit": "提交",
+    "retry": "重试",
+    "back": "返回",
+    "next": "下一步",
+    "ok": "确定"
+  },
+  "labels": {
+    "email": "邮箱",
+    "password": "密码",
+    "username": "用户名",
+    "search": "搜索"
+  },
+  "messages": {
+    "success": "操作成功",
+    "error": "发生错误",
+    "confirm": "确定吗？",
+    "noData": "暂无数据"
+  },
+  "status": {
+    "current": "当前",
+    "unknown": "未知"
+  },
+  "actions": {
+    "switch": "使用"
+  }
+}

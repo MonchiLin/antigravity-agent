@@ -1,0 +1,26 @@
+{
+  "import": {
+    "title": "导入配置文件",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "submitButton": "导入",
+    "cancelButton": "取消"
+  },
+  "export": {
+    "title": "导出配置文件",
+    "description": "请设置导出密码，用于保护您的配置文件",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "passwordPlaceholder": "请输入密码",
+    "confirmPasswordPlaceholder": "请确认密码",
+    "submitButton": "导出",
+    "cancelButton": "取消"
+  },
+  "validation": {
+    "passwordRequired": "请输入密码",
+    "passwordTooShort": "密码长度至少为4位",
+    "passwordTooLong": "密码长度不能超过50位",
+    "passwordInvalid": "密码无效",
+    "passwordMismatch": "两次输入的密码不一致"
+  }
+}

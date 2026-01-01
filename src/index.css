@@ -227,7 +227,9 @@ input[type=password]::-ms-clear
   * {
     @apply border-border outline-ring/50;}
   body {
-    @apply bg-background text-foreground;}}
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  }}
 
 @layer utilities {
   .line-clamp-2 {

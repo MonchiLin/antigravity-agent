@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.antigravity_agent.app</id>
+  <name>Antigravity Agent</name>
+  <summary>Antigravity Account management tool</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Antigravity Agent - Account management tool
+    </p>
+  </description>
+  <url type="homepage">https://github.com/MonchiLin/antigravity-agent</url>
+  <url type="bugtracker">https://github.com/MonchiLin/antigravity-agent/issues</url>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.5.3" date="2025-12-28" />
+  </releases>
+  <launchable type="desktop-id">com.antigravity_agent.app.desktop</launchable>
+</component>

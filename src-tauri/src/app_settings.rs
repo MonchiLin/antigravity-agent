@@ -16,6 +16,13 @@ pub struct AppSettings {
     pub debug_mode: bool,
     /// 隐私模式：用户信息打码（邮箱/用户名）
     pub private_mode: bool,
+    /// 语言偏好设置
+    #[serde(default = "default_language")]
+    pub language: String,
+}
+
+fn default_language() -> String {
+    "en".to_string()
 }
 
 fn default_private_mode() -> bool {
@@ -29,6 +36,7 @@ impl Default for AppSettings {
             silent_start_enabled: false,
             debug_mode: false,
             private_mode: default_private_mode(),
+            language: default_language(),
         }
     }
 }

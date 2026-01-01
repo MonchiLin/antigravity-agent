@@ -1,0 +1,7 @@
+{
+  "fetchUserListFailed": "获取用户列表失败: {{error}}",
+  "fetchUserDataFailed": "获取用户额外数据失败",
+  "operationCancelled": "操作已取消",
+  "languageChanged": "语言切换成功",
+  "languageChangeFailed": "语言切换失败"
+}

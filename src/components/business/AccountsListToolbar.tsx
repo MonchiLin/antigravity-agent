@@ -1,11 +1,13 @@
 import React from 'react';
-import {ArrowUpDown, Search, X} from 'lucide-react';
-import {cn} from '@/lib/utils.ts';
-import {BaseInput} from '@/components/base-ui/BaseInput';
-import type {UserTier} from '@/modules/use-account-addition-data.ts';
-import {Select as AntSelect} from 'antd';
-import {LineShadowText} from "@/components/ui/line-shadow-text.tsx";
+import { ArrowUpDown, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils.ts';
+import { BaseInput } from '@/components/base-ui/BaseInput';
+import type { UserTier } from '@/modules/use-account-addition-data.ts';
+import { Select as AntSelect } from 'antd';
+import { LineShadowText } from "@/components/ui/line-shadow-text.tsx";
 import UpdateBadge from "@/components/business/UpdateBadge.tsx";
+import { useTranslation } from 'react-i18next';
+import { LanguageDropdown } from '@/components/business/LanguageDropdown.tsx';
 
 export type ListSortKey = 'name' | 'claude' | 'gemini-pro' | 'gemini-flash' | 'gemini-image' | 'tier';
 export type ListToolbarValue = {
@@ -14,28 +16,35 @@ export type ListToolbarValue = {
   tiers: UserTier[] | null;
 };
 
-const defaultSortOptions: Array<{ value: ListSortKey; label: string }> = [
-  { value: 'name', label: '用户名首字母' },
-  { value: 'gemini-pro', label: 'Gemini Pro 配额' },
-  { value: 'claude', label: 'Claude 配额' },
-  { value: 'gemini-flash', label: 'Gemini Flash 配额' },
-  { value: 'gemini-image', label: 'Gemini Image 配额' },
-  { value: 'tier', label: '账户层次' },
-];
+const useSortOptions = () => {
+  const { t } = useTranslation('dashboard');
+  return React.useMemo<Array<{ value: ListSortKey; label: string }>>(() => [
+    { value: 'name', label: t('sort.name') },
+    { value: 'gemini-pro', label: t('sort.geminiPro') },
+    { value: 'claude', label: t('sort.claude') },
+    { value: 'gemini-flash', label: t('sort.geminiFlash') },
+    { value: 'gemini-image', label: t('sort.geminiImage') },
+    { value: 'tier', label: t('sort.tier') },
+  ], [t]);
+};
 
-const tierUiMap: Record<UserTier, { label: string; accentClass: string }> = {
-  'free-tier': {
-    label: 'Free',
-    accentClass: 'text-slate-900 dark:text-slate-50',
-  },
-  'g1-pro-tier': {
-    label: 'Pro',
-    accentClass: 'text-amber-700 dark:text-amber-300',
-  },
-  'g1-ultra-tier': {
-    label: 'Ultra',
-    accentClass: 'text-violet-700 dark:text-violet-300',
-  },
+// Use a hook or component to get dynamic translations for map values
+const useTierUiMap = () => {
+  const { t } = useTranslation('common');
+  return React.useMemo<Record<UserTier, { label: string; accentClass: string }>>(() => ({
+    'free-tier': {
+      label: t('tier.free'),
+      accentClass: 'text-slate-900 dark:text-slate-50',
+    },
+    'g1-pro-tier': {
+      label: t('tier.pro'),
+      accentClass: 'text-amber-700 dark:text-amber-300',
+    },
+    'g1-ultra-tier': {
+      label: t('tier.ultra'),
+      accentClass: 'text-violet-700 dark:text-violet-300',
+    },
+  }), [t]);
 };
 
 const allTiers: UserTier[] = ['free-tier', 'g1-pro-tier', 'g1-ultra-tier'];
@@ -66,6 +75,9 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
   className,
   tiers,
 }) => {
+  const { t } = useTranslation('dashboard');
+  const sortOptions = useSortOptions();
+  const tierUiMap = useTierUiMap();
   const normalizedTiers = tiers && tiers.length > 0 ? tiers : null;
   const selectedTiers = normalizedTiers ?? [];
 
@@ -113,24 +125,24 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
           {/* padding 修复截断 */}
           <LineShadowText className={"pr-2 pb-1"}>Agent</LineShadowText>
         </a>
-        <UpdateBadge/>
+        <UpdateBadge />
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         <div className="inline-flex items-center w-fit rounded-full border border-slate-200 bg-slate-100 p-0.5 transition-colors hover:border-slate-300">
           {/* 左侧：标签部分 (较弱的视觉) */}
           <span className="px-2 py-0.5 text-xs font-medium text-slate-600">
-          账户
-        </span>
+            {t('toolbar.accounts')}
+          </span>
           <span className="flex min-w-[20px] items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-bold text-slate-800 shadow-sm">
-          {total}
-        </span>
+            {total}
+          </span>
         </div>
 
         <BaseInput
           value={query}
           onChange={handleSearchChange}
-          placeholder="搜索邮箱或昵称..."
+          placeholder={t('toolbar.searchPlaceholder')}
           leftIcon={<Search className="h-4 w-4" />}
           rightIcon={
             query ? (
@@ -164,7 +176,7 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
                 : 'text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-900/60'
             )}
           >
-            全部
+            {t('toolbar.filterAll')}
           </button>
           {allTiers.map(tier => {
             const isActive = selectedTiers.includes(tier);
@@ -201,7 +213,7 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
             size="small"
             variant="borderless"
             popupMatchSelectWidth={false}
-            options={defaultSortOptions.map(opt => ({
+            options={sortOptions.map(opt => ({
               value: opt.value,
               label: opt.label,
             }))}
@@ -211,6 +223,10 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
             )}
           />
         </div>
+
+        {/* 语言切换器：新增 */}
+        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+        <LanguageDropdown />
       </div>
     </div>
   );

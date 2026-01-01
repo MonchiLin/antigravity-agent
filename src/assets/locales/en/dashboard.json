@@ -1,0 +1,25 @@
+{
+  "toolbar": {
+    "accounts": "Accounts",
+    "searchPlaceholder": "Search email or nickname...",
+    "filterAll": "All"
+  },
+  "sort": {
+    "name": "Username (A-Z)",
+    "geminiPro": "Gemini Pro Quota",
+    "claude": "Claude Quota",
+    "geminiFlash": "Gemini Flash Quota",
+    "geminiImage": "Gemini Image Quota",
+    "tier": "Account Tier"
+  },
+  "emptyState": {
+    "title": "No Accounts Available",
+    "description": "After logging into Antigravity, this program will automatically detect accounts."
+  },
+  "actions": {
+    "loginNew": "Login New Account",
+    "import": "Import Accounts",
+    "exportAll": "Export All Accounts",
+    "preferences": "Preferences"
+  }
+}

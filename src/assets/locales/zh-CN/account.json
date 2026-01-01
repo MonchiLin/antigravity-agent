@@ -1,0 +1,44 @@
+{
+  "actions": {
+    "delete": "删除",
+    "use": "使用"
+  },
+  "tooltip": {
+    "currentSession": "当前会话"
+  },
+  "warning": {
+    "unknownTier": {
+      "title": "当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级",
+      "description": "这不是您的问题, 为了解决这个问题, 您可以将该提示截图",
+      "reportLink": "提供给开发者"
+    }
+  },
+  "accountDetail": {
+    "title": "用户详情",
+    "apiKey": "API 密钥"
+  },
+  "delete": {
+    "title": "确认删除账户",
+    "message": "确定要删除账户 \"{{email}}\" 吗？此操作无法撤销。",
+    "success": "账户 \"{{email}}\" 删除成功"
+  },
+  "clearAll": {
+    "title": "确认清空所有备份",
+    "message": "此操作将永久删除所有 {{count}} 个账户，且无法恢复。请确认您要继续此操作吗？",
+    "success": "清空所有备份成功",
+    "error": "清空备份失败: {{error}}",
+    "noBackups": "当前没有用户备份可清空"
+  },
+  "switch": {
+    "loading": "正在切换到用户: {{email}}..."
+  },
+  "loginNew": {
+    "title": "登录新账户",
+    "confirmMessage": "确定要关闭 Antigravity 并登录新账户吗？",
+    "details": "此操作将会：",
+    "step1": "关闭所有 Antigravity 进程",
+    "step2": "清除 Antigravity 用户信息",
+    "step3": "自动重新启动 Antigravity",
+    "warning": "注意：系统将自动启动 Antigravity，请确保已保存所有重要工作"
+  }
+}

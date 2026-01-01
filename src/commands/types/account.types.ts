@@ -57,3 +57,17 @@ interface Plan {
   upgrade_msg: string
   upgrade_url: string
 }
+
+// 对应 Rust 的 AccountMetrics 结构
+export interface QuotaItem {
+  model_name: string;
+  percentage: number;
+  reset_text: string;
+}
+
+export interface AccountMetrics {
+  email: string;
+  user_id: string;
+  avatar_url: string;
+  quotas: QuotaItem[];
+}

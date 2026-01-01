@@ -1,68 +1,102 @@
+<div align="center">
+
 # Antigravity Agent
 
-> 请注意, 目前 Antigravity Agent 仅在 https://github.com/MonchiLin/antigravity-agent/releases 分发, 涉及 Google 账户信息, 若您从其他来源下载, 请确保其来源可信。
+[English](docs/README.en.md) | 简体中文
 
-> 开箱即用的 Antigravity 账户管理程序。
+**轻松管理您的 Antigravity 多账户**
 
-<img src="screenshots/dashboard.png" alt="dashboard" width="700" />
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](../../releases)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](../../releases)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](../../releases)
 
-Windows ✅️
+[![Download](https://img.shields.io/badge/Downloads-View_Releases-2ea44f?style=for-the-badge&logo=github)](../../releases)
 
-MacOS ✅️
+<br />
 
-Ubuntu(其余 Linux 发行版未经测试) ✅️
+<img src="screenshots/dashboard.png" alt="Antigravity Agent Dashboard" width="700" />
 
-## 下载安装
+<img src="screenshots/vscode-extension_dashboard.png" alt="Antigravity Agent VSCode Extension Dashboard" width="700" />
 
-前往 [Releases](../../releases) 页面下载最新版本：
+<br />
 
-## 操作指南
 
-### 首次启动
-1. 启动 Antigravity Agent
-2. 自动识别并记录当前登录用户
 
-### 切换账户
-- 从账户列表中选择要切换的账户
-- 点击"切换"按钮自动切换
+</div>
 
-### 登录新账户
-- 点击"登录新账户"按钮
-- 确认操作后将清除当前用户数据
-- 自动启动 Antigravity，登录新账户后自动记录在 Antigravity Agent
+---
 
-### 导入导出
-- **导出**: 选择保存位置，设置密码，导出所有账户配置
-- **导入**: 选择配置文件，输入密码，恢复账户数据
+> [!WARNING]
+> 本软件仅通过 [GitHub Releases](https://github.com/MonchiLin/antigravity-agent/releases) 官方渠道分发。  
+> 由于涉及账户敏感信息，请勿从其他来源下载，以确保您的数据安全。
 
-## Bug 反馈
+---
 
-遇到问题时，请按照以下步骤提供日志以便快速定位和解决问题：
+> [!TIP]
+> **Antigravity 扩展已上线！** 从 1.6.0 版本起，您可以安装 [Antigravity 扩展](https://open-vsx.org/extension/MonchiLin/antigravity-agent)，在编辑器内切换账户、实时当前对话和所有模型配额，仅需后台运行 Antigravity Agent 即可。
 
-1. **查找日志文件**：
-   - 若能够启动程序
-     - "设置" -> 启动"调试模式"
-     - 复现 BUG
-     - 点击"设置" -> "打开日志文件位置"
-   - 若无法启动程序, 也可在打开下面路径找到日志文件
-     - Windows: `%USERPROFILE%\.antigravity-agent\logs\`
-     - macOS: `~/.antigravity-agent/logs/`
-     - Linux: `~/.antigravity-agent/logs/`
-   - 查找当前日期的日志文件（格式：`antigravity-agent.YYYY-MM-DD`，例如：`antigravity-agent.2025-12-11`）
+## 功能概览
 
-2. **⚠️ 重要：检查敏感信息**
-   - **打开日志文件**，仔细检查是否包含个人敏感信息
-   - **特别注意以下内容**：
-     - 完整的邮箱地址
-     - API 密钥、令牌或密码
-     - 用户路径中的真实用户名
-     - 其他任何您认为敏感的信息
+<table>
+<tr>
+<td width="50%">
 
-## 📝 TODO 列表
+### 快速切换
+在多个账户间一键切换，无需重复登录
 
-- [ ] 扩展支持
-- [ ] 国际化支持
-- [ ] 主题支持
-- [ ] 检查更新
-- [ ] 规范开发流程
-- [ ] CHANGELOG
+</td>
+<td width="50%">
+
+### 自动记录
+自动识别当前账户并保存
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 安全备份
+通过密码加密导出账户配置，支持跨设备迁移
+
+</td>
+<td width="50%">
+
+### VSCode 扩展
+在编辑器内切换账户、查看模型配额
+
+</td>
+</tr>
+</table>
+
+---
+
+## 使用说明
+
+<details>
+<summary><b>添加新账户</b></summary>
+
+<br />
+
+1. 点击 **登录新账户** 按钮
+2. 确认后，当前账户数据将被清除
+3. 在自动打开的 Antigravity 中登录新账户，账户信息将自动保存
+
+</details>
+
+---
+
+## 路线图
+
+| 状态 | 计划 |
+|:----:|------|
+| - | 账户层级 |
+| - | 暗色主题 |
+| - | 开发流程规范化 |
+| - | 版本更新日志 |
+
+---
+
+## 常见问题
+
+- **Linux 用户如何安装？**  
+  我们推荐使用 Flatpak 版本以获得最佳体验。请查看 [Flatpak 安装指南](docs/flatpak-install.zh-CN.md)。

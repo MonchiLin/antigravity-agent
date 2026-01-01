@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Antigravity Agent
+Comment=Antigravity Account management tool
+Exec=antigravity-agent
+Icon=com.antigravity_agent.app
+Terminal=false
+Type=Application
+Categories=Utility;
+StartupWMClass=antigravity-agent

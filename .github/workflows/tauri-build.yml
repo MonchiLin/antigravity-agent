@@ -46,9 +46,9 @@ jobs:
             arch: x86_64
             runs-on: macos-latest
             target: x86_64-apple-darwin
-          - platform: ubuntu-latest
+          - platform: ubuntu-22.04
             arch: x86_64
-            runs-on: ubuntu-latest
+            runs-on: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
           - platform: windows-latest
             arch: x86_64
@@ -64,7 +64,7 @@ jobs:
           ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
 
       - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -156,7 +156,7 @@ jobs:
                 cd "$BUNDLE_DIR/dmg/"
                 for file in *.dmg; do
                   if [ -f "$file" ]; then
-                    rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_${ARCH}.dmg"
+                    rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_${ARCH}.dmg"
                   fi
                 done
               )
@@ -168,7 +168,7 @@ jobs:
                 cd "$BUNDLE_DIR/macos/"
                 for file in *.app.tar.gz; do
                   if [ -f "$file" ]; then
-                    rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_${ARCH}.app.tar.gz"
+                    rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_${ARCH}.app.tar.gz"
                   fi
                 done
               )
@@ -183,9 +183,9 @@ jobs:
                 for file in *.msi *.msi.zip; do
                   if [ -f "$file" ]; then
                     if echo "$file" | grep -q "\\.msi\\.zip$"; then
-                      rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_x64-setup.msi.zip"
+                      rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_x64-setup.msi.zip"
                     else
-                      rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_x64-setup.msi"
+                      rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_x64-setup.msi"
                     fi
                   fi
                 done
@@ -198,9 +198,9 @@ jobs:
                 for file in *.exe *.nsis.zip; do
                   if [ -f "$file" ]; then
                     if echo "$file" | grep -q "\\.nsis\\.zip$"; then
-                      rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_x64-setup.nsis.zip"
+                      rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_x64-setup.nsis.zip"
                     else
-                      rename_with_sig "$file" "Antigravity Agent${AG_NAME_MID}_x64-setup.exe"
+                      rename_with_sig "$file" "Antigravity.Agent${AG_NAME_MID}_x64-setup.exe"
                     fi
                   fi
                 done
@@ -209,7 +209,7 @@ jobs:
           fi
 
           # Linux
-          if [ "$PLATFORM" = "ubuntu-latest" ]; then
+          if [ "$PLATFORM" = "ubuntu-22.04" ]; then
             if [ -d "$BUNDLE_DIR/appimage" ]; then
               (
                 cd "$BUNDLE_DIR/appimage/"
@@ -254,7 +254,7 @@ jobs:
 
           if (Test-Path $exePath) {
             New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-            Copy-Item $exePath "$outputDir\Antigravity Agent.exe"
+            Copy-Item $exePath "$outputDir\Antigravity.Agent.exe"
             Compress-Archive -Path "$outputDir\*" -DestinationPath $zipPath -Force
             Remove-Item -Recurse -Force $outputDir
           } else {

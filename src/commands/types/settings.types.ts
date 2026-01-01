@@ -17,4 +17,7 @@ export interface AppSettings {
 
   /** 隐私模式：用户卡片信息打码（邮箱/用户名） */
   privateMode: boolean;
+
+  /** 语言偏好设置 */
+  language: string;
 }

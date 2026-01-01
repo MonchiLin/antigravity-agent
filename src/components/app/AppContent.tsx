@@ -1,15 +1,16 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BusinessUserDetail from "@/components/business/AccountDetailModal.tsx";
-import {useAntigravityAccount, useCurrentAntigravityAccount} from "@/modules/use-antigravity-account.ts";
-import {useAccountAdditionData, UserTier} from "@/modules/use-account-addition-data.ts";
-import {useTrayMenu} from "@/hooks/use-tray-menu.ts";
-import {Modal} from 'antd';
+import { useAntigravityAccount, useCurrentAntigravityAccount } from "@/modules/use-antigravity-account.ts";
+import { useAccountAdditionData, UserTier } from "@/modules/use-account-addition-data.ts";
+import { useTrayMenu } from "@/hooks/use-tray-menu.ts";
+import { Modal } from 'antd';
 import toast from 'react-hot-toast';
-import {maskEmail} from "@/lib/string-masking.ts";
-import {useAppGlobalLoader} from "@/modules/use-app-global-loader.ts";
-import {AccountSessionList, AccountSessionListAccountItem} from "@/components/business/AccountSessionList.tsx";
-import AccountsListToolbar, {type ListToolbarValue} from "@/components/business/AccountsListToolbar.tsx";
-import {logger} from "@/lib/logger.ts";
+import { maskEmail } from "@/lib/string-masking.ts";
+import { useAppGlobalLoader } from "@/modules/use-app-global-loader.ts";
+import { AccountSessionList, AccountSessionListAccountItem } from "@/components/business/AccountSessionList.tsx";
+import AccountsListToolbar, { type ListToolbarValue } from "@/components/business/AccountsListToolbar.tsx";
+import { logger } from "@/lib/logger.ts";
+import { useTranslation } from 'react-i18next';
 
 const tierRank: Record<UserTier, number> = {
   'g1-ultra-tier': 0,
@@ -18,9 +19,15 @@ const tierRank: Record<UserTier, number> = {
 };
 
 export function AppContent() {
+  const { t } = useTranslation(['account', 'notifications']);
   const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AccountSessionListAccountItem | null>(null);
-  const antigravityAccount = useAntigravityAccount();
+  // Use selectors to prevent infinite render loops
+  const accounts = useAntigravityAccount((state) => state.accounts);
+  const getAccounts = useAntigravityAccount((state) => state.getAccounts);
+  const deleteAccount = useAntigravityAccount((state) => state.delete);
+  const clearAllAccounts = useAntigravityAccount((state) => state.clearAllAccounts);
+  const switchToAccount = useAntigravityAccount((state) => state.switchToAccount);
   const accountAdditionData = useAccountAdditionData();
   const currentAntigravityAccount = useCurrentAntigravityAccount();
   const appGlobalLoader = useAppGlobalLoader();
@@ -37,15 +44,15 @@ export function AppContent() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        await antigravityAccount.getAccounts();
+        await getAccounts();
       } catch (error) {
-        toast.error(`获取用户列表失败: ${error}`);
+        toast.error(t('notifications:fetchUserListFailed', { error }));
       } finally {
       }
     };
 
     loadUsers();
-  }, []);
+  }, [getAccounts, t]);
 
   // 定时获取用户额外数据
   const fetchAccountAdditionDataTimer = useRef(null)
@@ -56,11 +63,11 @@ export function AppContent() {
     }
 
     const task = () => {
-      antigravityAccount.accounts.forEach(async (user) => {
+      accounts.forEach(async (user) => {
         try {
           await accountAdditionData.update(user)
         } catch (e) {
-          logger.error('获取用户额外数据失败', {
+          logger.error(t('notifications:fetchUserDataFailed'), {
             module: 'AppContent',
             email: user.context.email,
             error: e instanceof Error ? e.message : String(e)
@@ -78,7 +85,7 @@ export function AppContent() {
     return () => {
       clearInterval(fetchAccountAdditionDataTimer.current)
     }
-  }, [antigravityAccount.accounts]);
+  }, [accounts.length, t]);
 
   // 用户详情处理
   const handleUserClick = (account: AccountSessionListAccountItem) => {
@@ -94,9 +101,9 @@ export function AppContent() {
   const handleDeleteBackup = (user: AccountSessionListAccountItem) => {
     Modal.confirm({
       centered: true,
-      title: '确认删除账户',
+      title: t('account:delete.title'),
       content: <p className={"wrap-break-word whitespace-pre-line"}>
-        {`确定要删除账户 "${user.email}" 吗？此操作无法撤销。`}
+        {t('account:delete.message', { email: user.email })}
       </p>,
       onOk() {
         return confirmDeleteAccount(user.email);
@@ -107,30 +114,30 @@ export function AppContent() {
   };
 
   const confirmDeleteAccount = async (email: string) => {
-    await antigravityAccount.delete(email);
-    toast.success(`账户 "${email}" 删除成功`);
+    await deleteAccount(email);
+    toast.success(t('account:delete.success', { email }));
   };
 
   const handleSwitchAccount = async (user: AccountSessionListAccountItem) => {
     try {
-      appGlobalLoader.open({label: `正在切换到用户: ${maskEmail(user.email)}...`});
-      await antigravityAccount.switchToAccount(user.email);
+      appGlobalLoader.open({ label: t('account:switch.loading', { email: maskEmail(user.email) }) });
+      await switchToAccount(user.email);
     } finally {
       appGlobalLoader.close();
     }
   };
 
   const handleClearAllBackups = () => {
-    if (antigravityAccount.accounts.length === 0) {
-      toast.error('当前没有用户备份可清空');
+    if (accounts.length === 0) {
+      toast.error(t('account:clearAll.noBackups'));
       return;
     }
 
     Modal.confirm({
       centered: true,
-      title: '确认清空所有备份',
+      title: t('account:clearAll.title'),
       content: <p className={"wrap-break-word whitespace-pre-line"}>
-        {`此操作将永久删除所有 ${antigravityAccount.accounts.length} 个账户，且无法恢复。请确认您要继续此操作吗？`}
+        {t('account:clearAll.message', { count: accounts.length })}
       </p>,
       onOk() {
         return confirmClearAllBackups();
@@ -142,15 +149,15 @@ export function AppContent() {
 
   const confirmClearAllBackups = async () => {
     try {
-      await antigravityAccount.clearAllAccounts();
-      toast.success('清空所有备份成功');
+      await clearAllAccounts();
+      toast.success(t('account:clearAll.success'));
     } catch (error) {
-      toast.error(`清空备份失败: ${error}`);
+      toast.error(t('account:clearAll.error', { error }));
       throw error;
     }
   };
 
-  const accounts: AccountSessionListAccountItem[] = antigravityAccount.accounts.map((account) => {
+  const accountsWithData: AccountSessionListAccountItem[] = accounts.map((account) => {
     const accountAdditionDatum = accountAdditionData.data[account.context.email]
 
     return {
@@ -172,7 +179,7 @@ export function AppContent() {
   })
 
   const normalizedQuery = condition.query.trim().toLowerCase();
-  const visibleAccounts = accounts
+  const visibleAccounts = accountsWithData
     .filter(account => {
       const matchesQuery =
         normalizedQuery.length === 0 ||

@@ -1,0 +1,40 @@
+id: com.antigravity_agent.app
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+command: antigravity-agent
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --share=network
+  - --device=dri
+  # Access to home for config files
+  - --filesystem=home
+modules:
+  - name: antigravity-agent
+    buildsystem: simple
+    build-commands:
+      # Extract .deb package
+      - ar x antigravity-agent.deb
+      - tar xf data.tar.*
+      
+      # Install binary
+      - install -Dm755 usr/bin/antigravity-agent /app/bin/antigravity-agent
+      
+      # Install icons (from extracted .deb)
+      - install -Dm644 usr/share/icons/hicolor/128x128/apps/antigravity-agent.png /app/share/icons/hicolor/128x128/apps/com.antigravity_agent.app.png || true
+      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/antigravity-agent.png /app/share/icons/hicolor/256x256/apps/com.antigravity_agent.app.png || true
+      
+      # Install desktop and metainfo from our files
+      - install -Dm644 antigravity-agent.desktop /app/share/applications/com.antigravity_agent.app.desktop
+      - install -Dm644 com.antigravity_agent.app.metainfo.xml /app/share/metainfo/com.antigravity_agent.app.metainfo.xml
+    sources:
+      # The .deb file will be provided by CI
+      - type: file
+        path: antigravity-agent.deb
+      # Desktop and metainfo files
+      - type: file
+        path: antigravity-agent.desktop
+      - type: file
+        path: com.antigravity_agent.app.metainfo.xml

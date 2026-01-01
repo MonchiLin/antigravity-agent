@@ -11,13 +11,6 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(updateLocale);
 
-// const lang = (navigator.language || "en").toLowerCase();
-// const locale =
-//   lang.startsWith("zh-hk") ? "zh-hk" :
-//     lang.startsWith("zh-tw") ? "zh-tw" :
-//       lang.startsWith("zh")    ? "zh-cn" :
-//         "en";
-
 dayjs.locale("en");
 
 // 把英文相对时间改成短单位

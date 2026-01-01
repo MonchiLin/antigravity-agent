@@ -142,3 +142,6 @@ nul
 debug_log.txt
 db
 *storybook.log
+
+# vscode plugin
+*.vsix

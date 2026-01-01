@@ -47,19 +47,20 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: 'Antigravity Agent ${{ steps.version.outputs.tag }}'
           body: |
-            ## 📥 下载安装
+            ### VS Code 插件
+            - [VSIX安装包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent-${{ steps.version.outputs.version }}.vsix)
 
             ### Windows
-            - **安装版**（推荐）: [Antigravity.Agent_${{ steps.version.outputs.version }}_x64-setup.exe](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_x64-setup.exe) - 支持自动更新
-            - **便携版**: [Antigravity-Agent-x86_64-Portable.zip](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity-Agent-x86_64-Portable.zip) - 解压即用，无需安装
-            
+            - [安装版(推荐)](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_x64-setup.exe) | [便携版](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity-Agent-x86_64-Portable.zip)
+
             ### macOS
-            - **Apple Silicon (M1/M2)**: [Antigravity.Agent_${{ steps.version.outputs.version }}_aarch64.dmg](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_aarch64.dmg)
-            - **Intel Mac**: [Antigravity.Agent_${{ steps.version.outputs.version }}_x86_64.dmg](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_x86_64.dmg)
-            
+            - [Apple Silicon](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_aarch64.dmg) | [Intel芯片](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/Antigravity.Agent_${{ steps.version.outputs.version }}_x86_64.dmg)
+
             ### Linux
-            - **AppImage**: [antigravity-agent_${{ steps.version.outputs.version }}_amd64.AppImage](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent_${{ steps.version.outputs.version }}_amd64.AppImage) - 通用格式，适用于所有发行版
-            - **Debian/Ubuntu**: [antigravity-agent_${{ steps.version.outputs.version }}_amd64.deb](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent_${{ steps.version.outputs.version }}_amd64.deb)
+            **AppImage(通用 推荐)**
+            - [Antigravity_Agent.AppImage](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent_${{ steps.version.outputs.version }}_amd64.AppImage)
+            - [Antigravity_Agent.deb](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/antigravity-agent_${{ steps.version.outputs.version }}_amd64.deb)
+            ---
             ---
 
             ## 📋 更新日志
@@ -97,3 +98,66 @@ jobs:
         with:
           event-type: generate-updater
           client-payload: '{"tag": "${{ needs.prepare-release.outputs.tag }}"}'
+
+  # Step 4: 构建 VS Code 插件
+  build-extension:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci --ignore-scripts --no-audit --prefer-offline
+
+      - name: Get Version
+        id: version
+        working-directory: ./vscode-extension
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        working-directory: ./vscode-extension
+        run: npm ci
+
+      - name: Bump to Build Version
+        id: bump
+        working-directory: ./vscode-extension
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          # Create unique build version e.g. 1.5.3-build.2023...
+          npm version prerelease --preid="build.$TIMESTAMP" --no-git-tag-version
+          
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "📍 Build Version: $NEW_VERSION"
+
+      - name: Build and Package Extension
+        working-directory: ./vscode-extension
+        run: npx @vscode/vsce package --out ./antigravity-agent-${{ steps.bump.outputs.version }}.vsix
+
+      - name: Upload Extension to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare-release.outputs.tag }}
+        run: |
+          gh release upload "$TAG" vscode-extension/antigravity-agent-${{ steps.bump.outputs.version }}.vsix --clobber --repo "${{ github.repository }}"
+
+      - name: Publish to Open VSX
+        working-directory: ./vscode-extension
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "⚠️ OVSX_PAT secret not found, skipping Open VSX publish"
+            exit 0
+          fi
+          npx ovsx publish ./antigravity-agent-${{ steps.bump.outputs.version }}.vsix --pat "$OVSX_PAT"

@@ -1,0 +1,7 @@
+{
+  "fetchUserListFailed": "Failed to fetch user list: {{error}}",
+  "fetchUserDataFailed": "Failed to fetch additional user data",
+  "operationCancelled": "Operation cancelled",
+  "languageChanged": "Language changed successfully",
+  "languageChangeFailed": "Failed to change language"
+}

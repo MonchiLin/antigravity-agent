@@ -1,0 +1,26 @@
+{
+  "import": {
+    "title": "Import Configuration",
+    "password": "Password",
+    "passwordPlaceholder": "Please enter password",
+    "submitButton": "Import",
+    "cancelButton": "Cancel"
+  },
+  "export": {
+    "title": "Export Configuration",
+    "description": "Please set an export password to protect your configuration file",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "passwordPlaceholder": "Please enter password",
+    "confirmPasswordPlaceholder": "Please confirm password",
+    "submitButton": "Export",
+    "cancelButton": "Cancel"
+  },
+  "validation": {
+    "passwordRequired": "Please enter password",
+    "passwordTooShort": "Password must be at least 4 characters",
+    "passwordTooLong": "Password cannot exceed 50 characters",
+    "passwordInvalid": "Invalid password",
+    "passwordMismatch": "Passwords do not match"
+  }
+}

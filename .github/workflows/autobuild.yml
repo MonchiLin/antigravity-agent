@@ -3,8 +3,7 @@ name: AutoBuild
 on:
   push:
     branches: [dev]         # dev 分支 push 时触发
-  schedule:
-    - cron: '0 0 * * *'    # 每天 00:00 UTC 构建一次 Nightly
+
   workflow_dispatch:        # 手动触发
 
 permissions:
@@ -53,17 +52,17 @@ jobs:
 
             ⚠️ **注意**：这是自动构建的测试版本，可能不稳定。建议普通用户使用 [正式发布版本](https://github.com/MonchiLin/antigravity-agent/releases/latest)。
 
-            ### Windows
-            - **安装版**（推荐）: [Antigravity.Agent_x64-setup.exe](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_x64-setup.exe) - 支持自动更新
-            - **便携版**: [Antigravity-Agent-x86_64-Portable.zip](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity-Agent-x86_64-Portable.zip) - 解压即用，无需安装
+            ### VS Code 插件
+            - [VSIX安装包 (Nightly)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent-nightly.vsix)
             
+            ### Windows
+            - [安装版(推荐)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_x64-setup.exe) | [便携版](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity-Agent-x86_64-Portable.zip)
+
             ### macOS
-            - **Apple Silicon (M1/M2)**: [Antigravity.Agent_aarch64.dmg](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_aarch64.dmg)
-            - **Intel Mac**: [Antigravity.Agent_x86_64.dmg](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_x86_64.dmg)
+            - [Apple Silicon](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_aarch64.dmg) | [Intel芯片](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/Antigravity.Agent_x86_64.dmg)
             
             ### Linux
-            - **AppImage**: [antigravity-agent_amd64.AppImage](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.AppImage) - 通用格式，适用于所有发行版
-            - **Debian/Ubuntu**: [antigravity-agent_amd64.deb](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.deb)
+            - [Flatpak](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.flatpak) | [Deb安装包](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.deb)
             ---
 
             🐛 如果发现问题或者需求请求，请[提交 Issue](https://github.com/MonchiLin/antigravity-agent/issues/new)
@@ -81,3 +80,133 @@ jobs:
       ref: dev
       cache_key_suffix: autobuild
     secrets: inherit
+
+  # 第三步：构建 VS Code 插件
+  build-extension:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci --ignore-scripts --no-audit --prefer-offline
+
+      - name: Get Version
+        id: version
+        working-directory: ./vscode-extension
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📍 Using extension version $VERSION"
+
+      - name: Bump to Nightly Version
+        working-directory: ./vscode-extension
+        run: |
+          # Create version like 1.5.3-nightly.202312271230
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          # Use npm version to update package.json without git tag
+          npm version prerelease --preid="nightly.$TIMESTAMP" --no-git-tag-version
+          
+          # Read new version back
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "Current Nightly Version: $NEW_VERSION"
+
+      - name: Install dependencies
+        working-directory: ./vscode-extension
+        run: npm ci
+
+      - name: Build and Package Extension (Nightly)
+        working-directory: ./vscode-extension
+        # Use dynamic filename based on package.json version
+        run: npx @vscode/vsce package --out ./antigravity-agent-nightly.vsix
+
+      - name: Upload Extension to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload autobuild vscode-extension/antigravity-agent-nightly.vsix --clobber --repo "${{ github.repository }}"
+
+      - name: Publish to Open VSX
+        # Always run, version collision handled by timestamp
+        working-directory: ./vscode-extension
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "⚠️ OVSX_PAT secret not found, skipping Open VSX publish"
+            exit 0
+          fi
+          
+          # Publish the file we just built
+          npx ovsx publish ./antigravity-agent-nightly.vsix --pat "$OVSX_PAT"
+
+  # 第四步：构建 Flatpak (Nightly) - Binary Wrapper 方式
+  build-flatpak:
+    needs: [prepare-release, build]  # 等待 .deb 构建完成
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Download .deb from Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Download the .deb package from the autobuild release
+          gh release download autobuild \
+            --pattern "*_amd64.deb" \
+            --dir .github/flatpak \
+            --repo "${{ github.repository }}" \
+            --clobber
+          
+          # Rename to expected name
+          mv .github/flatpak/*_amd64.deb .github/flatpak/antigravity-agent.deb
+          
+          echo "Downloaded .deb:"
+          ls -la .github/flatpak/
+
+      - name: Build Flatpak
+        run: |
+          # 1. Setup Flathub remote
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+          # 2. Install GNOME 48 runtime
+          flatpak install -y flathub org.gnome.Sdk//48 || true
+          flatpak install -y flathub org.gnome.Platform//48 || true
+
+          # 3. Build Flatpak (Binary Wrapper - just extracts .deb)
+          flatpak-builder \
+            --force-clean \
+            --disable-rofiles-fuse \
+            --repo=repo \
+            --install-deps-from=flathub \
+            build-dir \
+            .github/flatpak/com.antigravity_agent.app.yml
+          
+          # 4. Create bundle
+          flatpak build-bundle repo antigravity-agent-nightly.flatpak com.antigravity_agent.app
+
+      - name: Rename Flatpak Bundle
+        run: mv antigravity-agent-nightly.flatpak antigravity-agent_amd64.flatpak
+      
+      - name: Upload Flatpak to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload autobuild antigravity-agent_amd64.flatpak --clobber --repo "${{ github.repository }}"
+

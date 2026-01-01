@@ -1,0 +1,55 @@
+{
+  "title": "Settings",
+  "version": "v{{version}}",
+  "paths": {
+    "executable": "Antigravity Executable",
+    "logDirectory": "Log Directory",
+    "openLogDirectory": "Open Log Directory",
+    "notSet": "Not Set",
+    "autoDetected": " (auto detected)"
+  },
+  "dialogs": {
+    "selectExecutable": "Select Antigravity Executable",
+    "executableFilter": "Executable Files",
+    "allFilesFilter": "All Files"
+  },
+  "toggles": {
+    "systemTray": {
+      "title": "System Tray",
+      "description": "Minimize to tray when closing window"
+    },
+    "silentStart": {
+      "title": "Silent Start",
+      "description": "Automatically hide main window on startup"
+    },
+    "privateMode": {
+      "title": "Privacy Mode",
+      "description": "Obfuscate sensitive information"
+    },
+    "debugMode": {
+      "title": "Debug Mode",
+      "description": "Record more logs (will auto-restart program)"
+    }
+  },
+  "language": {
+    "title": "Language",
+    "description": "Change the interface language",
+    "changeSuccess": "Language changed successfully",
+    "changeError": "Failed to change language",
+    "change": "Change Language"
+  },
+  "links": {
+    "issues": "Report Issues/Request Features"
+  },
+  "extension": {
+    "fetchingInfo": "Fetching extension info...",
+    "fetchFailed": "Failed to fetch extension info: {{status}}",
+    "parseVersionFailed": "Failed to parse extension version",
+    "downloading": "Downloading and installing {{id}} v{{version}}...",
+    "installFailed": "Installation failed",
+    "installFailedTitle": "Extension Installation Failed",
+    "installFailedError": "Automatic installation encountered an error: {{error}}",
+    "installFailedManual": "You can try to download and install manually:",
+    "okButton": "OK"
+  }
+}

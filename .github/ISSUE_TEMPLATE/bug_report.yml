@@ -1,0 +1,79 @@
+name: Bug 反馈
+description: 报告程序问题或异常行为
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您提交问题反馈！请尽可能详细地填写以下信息，以便我们快速定位问题。
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - Windows
+        - macOS
+        - Linux (Ubuntu)
+        - Linux (其他发行版)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 软件版本
+      description: 可在「设置」中查看当前版本号
+      placeholder: "例如：1.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请清晰描述您遇到的问题
+      placeholder: 发生了什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请提供能够复现此问题的操作步骤
+      placeholder: |
+        1. 打开应用
+        2. 点击某按钮
+        3. 出现错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 您期望的正确行为是什么？
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志文件
+      description: |
+        请附上相关日志内容（提交前请移除敏感信息）
+        日志路径：
+        - Windows: `%USERPROFILE%\.antigravity-agent\logs\`
+        - macOS / Linux: `~/.antigravity-agent/logs/`
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图
+      description: 如有相关截图，请在此处粘贴
+    validations:
+      required: false
