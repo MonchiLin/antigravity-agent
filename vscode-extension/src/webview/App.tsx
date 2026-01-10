@@ -1,4 +1,4 @@
-import { VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react';
+import { VSCodeCheckbox, VSCodeButton } from '@vscode/webview-ui-toolkit/react';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccountsTab } from './components/AccountsTab';
@@ -43,6 +43,14 @@ const App: React.FC = () => {
         }
     };
 
+    const handleReload = () => {
+        if (vscodeApi) {
+            vscodeApi.postMessage({
+                command: 'reloadWindow'
+            });
+        }
+    };
+
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-vscode-bg text-vscode-fg">
             {/* Nav Row */}
@@ -64,6 +72,13 @@ const App: React.FC = () => {
                     >
                         {t('dashboard:actions.autoPilot')}
                     </VSCodeCheckbox>
+                    <VSCodeButton
+                        appearance="secondary"
+                        className="h-6 text-[12px]"
+                        onClick={handleReload}
+                    >
+                        Reload
+                    </VSCodeButton>
                 </div>
             </div>
 

@@ -94,6 +94,9 @@ export class AntigravityPanel {
                                 vscode.window.showInformationMessage(t('msg.copied'));
                             }
                             break;
+                        case 'reloadWindow':
+                            vscode.commands.executeCommand('workbench.action.reloadWindow');
+                            break;
                     }
                 } catch (err) {
                     Logger.log(`Error handling message: ${err}`);
