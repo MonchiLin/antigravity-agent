@@ -1,10 +1,16 @@
-name: Release Build v2
+name: Release Build
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      publish_update:
+        description: 'Publish Update (trigger updater mechanism)'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -88,7 +94,7 @@ jobs:
   trigger-updater:
     needs: [prepare-release, build]
     runs-on: ubuntu-latest
-    if: success()
+    if: success() && (github.event_name != 'workflow_dispatch' || inputs.publish_update == true)
     steps:
       - name: Generate updater configuration
         uses: peter-evans/repository-dispatch@v2
