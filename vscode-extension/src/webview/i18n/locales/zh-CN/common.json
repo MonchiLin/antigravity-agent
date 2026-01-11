@@ -31,7 +31,8 @@
   },
   "status": {
     "current": "当前",
-    "unknown": "未知"
+    "unknown": "未知",
+    "noName": "未命名"
   },
   "actions": {
     "switch": "使用"

@@ -68,7 +68,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
                         />
                     )}
                     <div>
-                        <div className="font-bold">{account.context.plan_name || 'No Name'}</div>
+                        <div className="font-bold">{account.context.plan_name || t('common:status.noName')}</div>
                         <div className="text-xs opacity-70" title={account.context.email}>{displayEmail}</div>
                     </div>
                 </div>

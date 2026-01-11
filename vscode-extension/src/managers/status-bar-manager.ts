@@ -184,7 +184,7 @@ export class StatusBarManager {
                 this.metricsItem.text = `$(antigravity-logo) ${t('status.none')}`;
                 this.metricsItem.tooltip = t('status.noAccount');
 
-                this.userItem.text = `$(account) Not Logged In`;
+                this.userItem.text = `$(account) ${t('status.notLoggedIn')}`;
                 this.userItem.tooltip = t('status.noAccount');
                 return;
             }
@@ -199,7 +199,7 @@ export class StatusBarManager {
             });
 
             if (!metricRes.ok) {
-                this.metricsItem.tooltip = `Current: ${email}\n(Failed to load metrics)`;
+                this.metricsItem.tooltip = `Current: ${email}\n${t('status.failedMetrics')}`;
                 this.userItem.text = `$(account) ${email}`;
                 return;
             }
@@ -216,7 +216,7 @@ export class StatusBarManager {
             this.metricsItem.tooltip = t('status.connectError');
             this.metricsItem.color = bgError;
 
-            this.userItem.text = `$(account) Offline`;
+            this.userItem.text = `$(account) ${t('status.offline').replace('Antigravity: ', '')}`;
             this.userItem.color = bgError;
 
             // Switch to fast polling (5s) for quick recovery detection
@@ -269,12 +269,13 @@ export class StatusBarManager {
      * Table Layout: Value precision and standard overview.
      */
     private static renderTooltip(metrics: AccountMetrics, currentAccount: CurrentAccount | undefined, displayEmail: string): vscode.MarkdownString {
+        const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
         const md = new vscode.MarkdownString();
         md.isTrusted = true;
         md.supportHtml = true;
 
         if (!currentAccount) {
-            md.appendMarkdown(`$(warning) **Not Logged In**`);
+            md.appendMarkdown(`${t('status.tooltip.notLoggedIn')}`);
             return md;
         }
 
@@ -291,11 +292,11 @@ export class StatusBarManager {
         const nickname = currentAccount.context.plan_name;
         const userDisplay = nickname ? `${nickname} (${displayEmail})` : displayEmail;
 
-        md.appendMarkdown(`**Account**: ${userDisplay} &nbsp;|&nbsp; **Plan**: ${plan}\n\n`);
+        md.appendMarkdown(`**${t('status.tooltip.account')}**: ${userDisplay} &nbsp;|&nbsp; **${t('status.tooltip.plan')}**: ${plan}\n\n`);
 
         // 2. Table of Models
         if (metrics.quotas.length > 0) {
-            md.appendMarkdown(`| Model | Usage | Reset |\n`);
+            md.appendMarkdown(`${t('status.tooltip.tableHeader')}\n`);
             md.appendMarkdown(`|:---|:---|:---|\n`);
 
             metrics.quotas.forEach(q => {
@@ -321,7 +322,7 @@ export class StatusBarManager {
                     // Calculate hours left roughly if date is future
                     const diffH = dayjs(q.reset_text).diff(dayjs(), 'hour');
                     if (diffH > 0 && diffH < 24) {
-                        resetTime = `${diffH}h left`;
+                        resetTime = t('status.timeLeft', diffH.toString());
                     } else if (diffH <= 0) {
                         // Do nothing, maybe 'Now'
                     }

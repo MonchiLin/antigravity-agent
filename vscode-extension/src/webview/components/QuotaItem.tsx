@@ -34,7 +34,7 @@ export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetTe
 
     // Treat undefined or negative values as unknown/invalid
     const isValid = percentage !== undefined && percentage >= 0;
-    const val = isValid ? Math.round(percentage! * 100) : '?';
+    const val = isValid ? Math.round(percentage! * 100) : t('dashboard:quota.unknown');
 
     // Only show reset text if valid and used (less than 100% typically, or logic as needed)
     // Original logic was percentage < 1, which implies < 100%. 
@@ -60,9 +60,9 @@ export const QuotaItem: React.FC<QuotaItemProps> = ({ label, percentage, resetTe
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-500 ease-out ${percentage === undefined ? 'bg-white/20' :
-                            percentage < 0.2 ? 'bg-red-500' :
-                                percentage < 0.5 ? 'bg-yellow-500' :
-                                    'bg-vscode-info'
+                        percentage < 0.2 ? 'bg-red-500' :
+                            percentage < 0.5 ? 'bg-yellow-500' :
+                                'bg-vscode-info'
                         }`}
                     style={{ width: `${Math.max(5, (percentage || 0) * 100)}%` }} // Min width 5% so it's visible
                 />

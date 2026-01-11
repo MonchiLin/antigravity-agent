@@ -22,10 +22,13 @@
     "exportAll": "导出所有账户",
     "preferences": "偏好设置",
     "autoPilot": "自动驾驶",
-    "loadingQuota": "正在加载配额..."
+    "loadingQuota": "正在加载配额...",
+    "privacyMode": "隐私模式",
+    "showAccount": "显示账户"
   },
   "quota": {
-    "resetAt": "(重置于: {{time}})"
+    "resetAt": "(重置于: {{time}})",
+    "unknown": "?"
   },
   "errorState": {
     "title": "无法连接至 Antigravity Agent",

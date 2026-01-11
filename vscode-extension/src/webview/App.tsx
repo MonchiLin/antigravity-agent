@@ -97,14 +97,14 @@ const App: React.FC = () => {
                         onChange={togglePrivacyMode}
                         className="text-[12px] opacity-70"
                     >
-                        Privacy Mode
+                        {t('dashboard:actions.privacyMode')}
                     </VSCodeCheckbox>
                     <VSCodeCheckbox
                         checked={showAccount}
                         onChange={toggleShowAccount}
                         className="text-[12px] opacity-70"
                     >
-                        Show Account
+                        {t('dashboard:actions.showAccount')}
                     </VSCodeCheckbox>
                 </div>
             </div>

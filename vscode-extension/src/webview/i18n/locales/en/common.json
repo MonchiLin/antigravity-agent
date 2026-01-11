@@ -31,7 +31,8 @@
   },
   "status": {
     "current": "Current",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "noName": "No Name"
   },
   "actions": {
     "switch": "Use"

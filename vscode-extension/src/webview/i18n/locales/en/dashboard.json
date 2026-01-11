@@ -22,10 +22,13 @@
     "exportAll": "Export All Accounts",
     "preferences": "Preferences",
     "autoPilot": "Auto Pilot",
-    "loadingQuota": "Loading quota..."
+    "loadingQuota": "Loading quota...",
+    "privacyMode": "Privacy Mode",
+    "showAccount": "Show Account"
   },
   "quota": {
-    "resetAt": "(Resets: {{time}})"
+    "resetAt": "(Resets: {{time}})",
+    "unknown": "?"
   },
   "errorState": {
     "title": "Unable to connect to Antigravity Agent",
