@@ -20,6 +20,7 @@ const App: React.FC = () => {
     const { t } = useTranslation(['dashboard', 'common']);
     const [autoAccept, setAutoAccept] = useState(false);
     const [privacyMode, setPrivacyMode] = useState(false);
+    const [showAccount, setShowAccount] = useState(true);
 
     // Listen for state messages from Extension Host
     useEffect(() => {
@@ -29,6 +30,8 @@ const App: React.FC = () => {
                 setAutoAccept(message.enabled);
             } else if (message.command === 'privacyModeState') {
                 setPrivacyMode(message.enabled);
+            } else if (message.command === 'showAccountState') {
+                setShowAccount(message.enabled);
             }
         };
         window.addEventListener('message', handleMessage);
@@ -52,6 +55,17 @@ const App: React.FC = () => {
         if (vscodeApi) {
             vscodeApi.postMessage({
                 command: 'setPrivacyMode',
+                enabled: newState
+            });
+        }
+    };
+
+    const toggleShowAccount = () => {
+        const newState = !showAccount;
+        setShowAccount(newState);
+        if (vscodeApi) {
+            vscodeApi.postMessage({
+                command: 'setShowAccount',
                 enabled: newState
             });
         }
@@ -85,13 +99,20 @@ const App: React.FC = () => {
                     >
                         Privacy Mode
                     </VSCodeCheckbox>
+                    <VSCodeCheckbox
+                        checked={showAccount}
+                        onChange={toggleShowAccount}
+                        className="text-[12px] opacity-70"
+                    >
+                        Show Account
+                    </VSCodeCheckbox>
                 </div>
             </div>
 
             {/* Content Area */}
             <div className="flex-1 overflow-auto">
                 <div className="h-full">
-                    <AccountsTab />
+                    <AccountsTab privacyMode={privacyMode} />
                 </div>
             </div>
         </div>

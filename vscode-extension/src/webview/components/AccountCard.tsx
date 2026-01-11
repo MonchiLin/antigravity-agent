@@ -31,10 +31,29 @@ interface AccountCardProps {
     data?: AccountData;
     isCurrent: boolean;
     onSwitch: (email: string) => void;
+    privacyMode: boolean;
 }
 
-export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurrent, onSwitch }) => {
+const maskEmail = (email: string): string => {
+    try {
+        const parts = email.split('@');
+        if (parts.length < 2) return email;
+
+        const [local, domain] = parts;
+        if (local.length <= 2) return `${local[0]}***@${domain}`;
+
+        // Keep first char, mask middle, show last char if length > 3
+        const visibleStart = local.slice(0, 1);
+        const visibleEnd = local.length > 3 ? local.slice(-1) : '';
+        return `${visibleStart}***${visibleEnd}@${domain}`;
+    } catch {
+        return email;
+    }
+};
+
+export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurrent, onSwitch, privacyMode }) => {
     const { t } = useTranslation(['common', 'dashboard']);
+    const displayEmail = privacyMode ? maskEmail(account.context.email) : account.context.email;
 
     return (
         <div className={`card flex flex-col gap-2.5 ${isCurrent ? 'card-active' : ''}`}>
@@ -50,7 +69,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
                     )}
                     <div>
                         <div className="font-bold">{account.context.plan_name || 'No Name'}</div>
-                        <div className="text-xs opacity-70">{account.context.email}</div>
+                        <div className="text-xs opacity-70" title={account.context.email}>{displayEmail}</div>
                     </div>
                 </div>
                 <div className="flex gap-2 items-center">

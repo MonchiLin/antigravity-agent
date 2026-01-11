@@ -33,6 +33,12 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Enable Auto Pilot mode."
+                },
+                "antigravity-agent.showAccount": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the current account in the StatusBar.",
+                    "title": "Show Account"
                 }
             }
         },

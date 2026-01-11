@@ -98,6 +98,14 @@ export class AntigravityPanel {
                         enabled: config.get<boolean>('privacy', false)
                     });
                 }
+
+                // Sync Show Account
+                if (e.affectsConfiguration('antigravity-agent.showAccount')) {
+                    this._panel.webview.postMessage({
+                        command: 'showAccountState',
+                        enabled: config.get<boolean>('showAccount', true)
+                    });
+                }
             }
         }, null, this._disposables);
 
@@ -110,9 +118,8 @@ export class AntigravityPanel {
                             vscode.window.showErrorMessage(message.text);
                             break;
                         case 'setAutoAccept':
-                            // Update Global Configuration
                             vscode.workspace.getConfiguration('antigravity-agent').update('autoPilot', message.enabled, vscode.ConfigurationTarget.Global);
-                            AutoAcceptManager.toggle(message.enabled); // Immediate update just in case
+                            AutoAcceptManager.toggle(message.enabled);
                             break;
                         case 'getAutoPilotState':
                             this._panel.webview.postMessage({
@@ -135,9 +142,10 @@ export class AntigravityPanel {
                             vscode.commands.executeCommand('workbench.action.reloadWindow');
                             break;
                         case 'setPrivacyMode':
-                            // Update Global Configuration
-                            Logger.log(`[Panel] User set privacy: ${message.enabled}`);
                             vscode.workspace.getConfiguration('antigravity-agent').update('privacy', message.enabled, vscode.ConfigurationTarget.Global);
+                            break;
+                        case 'setShowAccount':
+                            vscode.workspace.getConfiguration('antigravity-agent').update('showAccount', message.enabled, vscode.ConfigurationTarget.Global);
                             break;
                     }
                 } catch (err) {
@@ -175,6 +183,10 @@ export class AntigravityPanel {
             this._panel.webview.postMessage({
                 command: 'privacyModeState',
                 enabled: config.get<boolean>('privacy', false)
+            });
+            this._panel.webview.postMessage({
+                command: 'showAccountState',
+                enabled: config.get<boolean>('showAccount', true)
             });
         }, 100);
     }

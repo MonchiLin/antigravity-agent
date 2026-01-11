@@ -1,11 +1,15 @@
-import React, {useEffect} from 'react';
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react';
-import {useAccountAdditionData} from '@/modules/use-account-addition-data';
-import {useAntigravityAccount} from '@/modules/use-antigravity-account';
-import {AccountCard} from './AccountCard';
+import React, { useEffect } from 'react';
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react';
+import { useAccountAdditionData } from '@/modules/use-account-addition-data';
+import { useAntigravityAccount } from '@/modules/use-antigravity-account';
+import { AccountCard } from './AccountCard';
 import './AccountsTab.css';
 
-export const AccountsTab: React.FC = () => {
+interface AccountsTabProps {
+    privacyMode: boolean;
+}
+
+export const AccountsTab: React.FC<AccountsTabProps> = ({ privacyMode }) => {
     const {
         accounts,
         currentAuthInfo,
@@ -74,6 +78,7 @@ export const AccountsTab: React.FC = () => {
                         data={additionData.data[acc.context.email]}
                         isCurrent={currentAuthInfo?.context.email === acc.context.email}
                         onSwitch={handleSwitchAccount}
+                        privacyMode={privacyMode}
                     />
                 ))}
             </div>

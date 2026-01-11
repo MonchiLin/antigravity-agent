@@ -13,7 +13,11 @@ import { maskEmail } from '../utils/string-masking';
 interface CurrentAccount {
     context: {
         email: string;
+        plan_name: string; // User Nickname
         plan?: {
+            tier_id: string;
+            tier_name: string;
+            display_name: string;
             slug: string;
         };
     };
@@ -34,6 +38,7 @@ export class StatusBarManager {
     private static lastModelName: string = 'Gemini 3 Pro (High)'; // Default Model Name
     private static currentPollDuration: number = 30000;
     private static isMaskingEnabled: boolean = false;
+    private static isShowAccountEnabled: boolean = true;
 
     /**
      * Initializes the status bar manager.
@@ -48,31 +53,45 @@ export class StatusBarManager {
         // Read initial config
         const config = vscode.workspace.getConfiguration('antigravity-agent');
         this.isMaskingEnabled = config.get<boolean>('privacy', false);
-        Logger.log(`[StatusBar] Initial Privacy Mode: ${this.isMaskingEnabled}`);
+        this.isShowAccountEnabled = config.get<boolean>('showAccount', true);
+
+        Logger.log(`[StatusBar] Initial Privacy Mode: ${this.isMaskingEnabled}, Show Account: ${this.isShowAccountEnabled}`);
 
         this.startPolling();
         context.subscriptions.push({ dispose: () => this.stopPolling() });
 
         // Listen for configuration changes
         context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+            const config = vscode.workspace.getConfiguration('antigravity-agent');
+
             if (e.affectsConfiguration('antigravity-agent.privacy')) {
-                const newPrivacy = vscode.workspace.getConfiguration('antigravity-agent').get<boolean>('privacy', false);
+                const newPrivacy = config.get<boolean>('privacy', false);
                 Logger.log(`[StatusBar] Privacy Mode Changed to: ${newPrivacy}`);
                 this.setMasking(newPrivacy);
+            }
+
+            if (e.affectsConfiguration('antigravity-agent.showAccount')) {
+                const newShowAccount = config.get<boolean>('showAccount', true);
+                Logger.log(`[StatusBar] Show Account Changed to: ${newShowAccount}`);
+                this.setShowAccount(newShowAccount);
             }
         }));
     }
 
     public static setMasking(enabled: boolean) {
-        Logger.log(`[StatusBar] Setting masking to: ${enabled}`);
         this.isMaskingEnabled = enabled;
+        this.refreshDisplay();
+    }
 
-        // Re-render immediately if we have data
+    public static setShowAccount(enabled: boolean) {
+        this.isShowAccountEnabled = enabled;
+        this.refreshDisplay();
+    }
+
+    private static refreshDisplay() {
         if (this.currentMetrics && this.currentAccount) {
             this.render(this.currentMetrics, this.currentAccount);
         } else {
-            Logger.log('[StatusBar] Missing metrics or account data, skipping immediate render');
-            // Try updating just in case
             this.update();
         }
     }
@@ -208,6 +227,7 @@ export class StatusBarManager {
         }
     }
 
+    // ... inside render method ...
     private static render(metrics: AccountMetrics, currentAccount?: CurrentAccount) {
         if (!metrics) return;
 
@@ -221,7 +241,7 @@ export class StatusBarManager {
             }
         }
 
-        if (currentAccount) {
+        if (currentAccount && this.isShowAccountEnabled) {
             this.userItem.text = `$(account) ${email}`;
             this.userItem.show();
         } else {
@@ -259,20 +279,19 @@ export class StatusBarManager {
         }
 
         // 1. Header: User & Plan
-        // Try to get the best display name for the plan
-        let plan =
-            currentAccount.context.plan?.display_name ||
-            currentAccount.context.plan?.tier_name ||
-            currentAccount.context.plan?.slug ||
-            currentAccount.context.plan_name ||
-            'UNKNOWN';
+        // Use tier_id as the definitive plan identifier, as seen in AccountCard
+        let plan = currentAccount.context.plan?.tier_id || 'UNKNOWN';
 
         // Prettify if it looks like a slug (contains underscores or dashes)
         if (plan.includes('_') || plan.includes('-')) {
             plan = plan.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
-        md.appendMarkdown(`**Account**: ${displayEmail} &nbsp;|&nbsp; **Plan**: ${plan}\n\n`);
+        // Use plan_name (Nickname) if available for better user identification
+        const nickname = currentAccount.context.plan_name;
+        const userDisplay = nickname ? `${nickname} (${displayEmail})` : displayEmail;
+
+        md.appendMarkdown(`**Account**: ${userDisplay} &nbsp;|&nbsp; **Plan**: ${plan}\n\n`);
 
         // 2. Table of Models
         if (metrics.quotas.length > 0) {
