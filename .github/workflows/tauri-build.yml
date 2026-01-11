@@ -208,24 +208,7 @@ jobs:
             fi
           fi
 
-          # Linux
-          if [ "$PLATFORM" = "ubuntu-22.04" ]; then
-            if [ -d "$BUNDLE_DIR/appimage" ]; then
-              (
-                cd "$BUNDLE_DIR/appimage/"
-                for file in *.AppImage *.AppImage.tar.gz; do
-                  if [ -f "$file" ]; then
-                    if echo "$file" | grep -q "\\.AppImage\\.tar\\.gz$"; then
-                      rename_with_sig "$file" "antigravity-agent${AG_LINUX_MID}_amd64.AppImage.tar.gz"
-                    else
-                      rename_with_sig "$file" "antigravity-agent${AG_LINUX_MID}_amd64.AppImage"
-                    fi
-                  fi
-                done
-              )
-            fi
 
-            if [ -d "$BUNDLE_DIR/deb" ]; then
               (
                 cd "$BUNDLE_DIR/deb/"
                 for file in *.deb; do
@@ -278,9 +261,99 @@ jobs:
 
           find "$BUNDLE_DIR" -type f \( \
             -name "*.msi" -o -name "*.exe" -o -name "*.zip" -o \
-            -name "*.AppImage" -o -name "*.AppImage.tar.gz" -o -name "*.deb" -o \
+            -name "*.deb" -o \
             -name "*.sig" -o -name "*.dmg" -o -name "*.app.tar.gz" \
           \) | while IFS= read -r file; do
             echo "Uploading: $file"
             gh release upload "$TAG" "$file" --clobber --repo "$REPO"
           done
+
+  build-flatpak:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
+
+      - name: Download .deb from Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # Download the .deb package from the release
+          gh release download "$TAG" \
+            --pattern "*_amd64.deb" \
+            --dir .github/flatpak \
+            --repo "${{ github.repository }}" \
+            --clobber
+          
+          # Rename to expected name for manifest source
+          mv .github/flatpak/*_amd64.deb .github/flatpak/antigravity-agent.deb
+          
+          echo "Downloaded and renamed .deb:"
+          ls -la .github/flatpak/
+
+      - name: Build Flatpak
+        run: |
+          # 1. Setup Flathub remote
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+          # 2. Install GNOME 48 runtime
+          flatpak install -y flathub org.gnome.Sdk//48 || true
+          flatpak install -y flathub org.gnome.Platform//48 || true
+
+          # 3. Build Flatpak
+          flatpak-builder \
+            --force-clean \
+            --disable-rofiles-fuse \
+            --repo=repo \
+            --install-deps-from=flathub \
+            build-dir \
+            .github/flatpak/com.antigravity_agent.app.yml
+          
+          # 4. Create bundle with temp name
+          flatpak build-bundle repo antigravity-agent.flatpak com.antigravity_agent.app
+
+      - name: Rename Flatpak Bundle
+        env:
+          VERSION: ${{ inputs.version }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # If version is provided, use it. Otherwise try to infer or fallback.
+          FINAL_VERSION="${VERSION}"
+          
+          if [ -z "$FINAL_VERSION" ]; then
+             # If no version input (e.g. autobuild scenario where inputs.version might be empty?), 
+             # we might need a fallback or use the Tag if it looks like a version.
+             # But for autobuild, the inputs.version is strictly optional.
+             # However, autobuild.yml calls tauri-build without 'version' input in previous state.
+             # Let's check autobuild.yml behavior. Autobuild tag name is 'autobuild'.
+             # If we don't have version, we can name it 'antigravity-agent_nightly_amd64.flatpak' or similar.
+             # But wait, logic in Build job was: 
+             # if [ -n "$VERSION" ]; then AG_LINUX_MID="_${VERSION}"; else AG_LINUX_MID=""; fi
+             # That implies without version, it's just antigravity-agent_amd64.deb
+             
+             if [ "$TAG" = "autobuild" ]; then
+                 FINAL_NAME="antigravity-agent_amd64.flatpak"
+             else
+                 # Fallback if somehow version is missing but it's not autobuild (unlikely)
+                 FINAL_NAME="antigravity-agent_amd64.flatpak"
+             fi
+          else
+             FINAL_NAME="antigravity-agent_${FINAL_VERSION}_amd64.flatpak"
+          fi
+          
+          mv antigravity-agent.flatpak "$FINAL_NAME"
+          echo "FINAL_FLATPAK_NAME=$FINAL_NAME" >> $GITHUB_ENV
+      
+      - name: Upload Flatpak to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release upload "$TAG" "${{ env.FINAL_FLATPAK_NAME }}" --clobber --repo "${{ github.repository }}"
