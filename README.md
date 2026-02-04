@@ -1,12 +1,7 @@
-<div align="center">
-
----
-
-> [!WARNING]
+> [!CAUTION]
 > 请勿升级 Antigravity 至 1.16.5，该版本无法使用 Antigravity Agent，该问题正在处理中。
 
----
-
+<div align="center">
 
 # Antigravity Agent
 
