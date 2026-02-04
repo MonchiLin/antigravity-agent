@@ -1,3 +1,6 @@
+> [!CAUTION]
+> **Do not update to Antigravity 1.16.5.** The Agent is broken in this version. We are working on a fix.
+
 <div align="center">
 
 # Antigravity Agent
