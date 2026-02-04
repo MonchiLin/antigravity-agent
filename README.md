@@ -1,5 +1,13 @@
 <div align="center">
 
+---
+
+> [!WARNING]
+> 请勿升级 Antigravity 至 1.16.5，该版本无法使用 Antigravity Agent，该问题正在处理中。
+
+---
+
+
 # Antigravity Agent
 
 [English](docs/README.en.md) | 简体中文
