@@ -1,5 +1,5 @@
 > [!CAUTION]
-> **Do not update to Antigravity 1.16.5.** The Agent is broken in this version. We are working on a fix.
+> For Antigravity 1.16.5, support has been launched in the test version, [download address](https://github.com/MonchiLin/antigravity-agent/releases/tag/autobuild). Please see [Version Note](Antigravity_1_5_6.md) for related changes.
 
 <div align="center">
 
