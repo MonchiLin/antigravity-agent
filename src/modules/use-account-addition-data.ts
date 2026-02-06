@@ -29,7 +29,7 @@ export interface AccountAdditionData {
 export const useAccountAdditionData = create<State & Actions>((setState, getState) => ({
   data: {},
   update: async (antigravityAccount: AntigravityAccount) => {
-    const email = antigravityAccount.antigravityAuthStatus.email;
+    const email = antigravityAccount.antigravity_auth_status.email;
 
     try {
       logger.debug(`开始获取账户指标 (Rust Singular): ${email}`);

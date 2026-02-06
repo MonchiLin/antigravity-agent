@@ -50,10 +50,8 @@ pub async fn load_account(
         .and_then(|v| v.as_str());
 
     // 1. 获取 Access Token (优先 OAuth, 回退 API Key)
-    let access_token = crate::utils::codec::extract_preferred_access_token(
-        oauth_token_raw,
-        &auth_status_json,
-    )?;
+    let access_token =
+        crate::utils::codec::extract_preferred_access_token(oauth_token_raw, &auth_status_json)?;
 
     // 2. 获取 Email
     let email = auth_status_json

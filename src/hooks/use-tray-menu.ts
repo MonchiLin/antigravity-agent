@@ -56,7 +56,7 @@ export function useTrayMenu() {
   // 当账户列表或语言变化时更新托盘菜单
   useEffect(() => {
     // 提取邮箱列表并更新托盘菜单
-    const emails = accounts.map((user) => user.antigravityAuthStatus.email);
+    const emails = accounts.map((user) => user.antigravity_auth_status.email);
     updateTrayMenu(emails);
   }, [accounts.length, updateTrayMenu, i18n.language]);
 }

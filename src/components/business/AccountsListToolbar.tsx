@@ -113,7 +113,7 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
 
       for (const batch of batches) {
         const promises = batch.map(acc => {
-          const email = acc.antigravityAuthStatus.email;
+          const email = acc.antigravity_auth_status.email;
           console.log("REFRESH: Triggering for", email);
           toast(t('toolbar.refreshingQuota') + ' ' + email, { id: 'refresh-' + email });
 

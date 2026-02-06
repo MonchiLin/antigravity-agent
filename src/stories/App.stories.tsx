@@ -174,7 +174,7 @@ export const ActiveAccountPinned: Story = {
     // 设置 currentAuthInfo 为 bruce.wayne
     useAntigravityAccount.setState({
       accounts: mockAccounts,
-      currentAuthInfo: mockAccounts.find(a => a.antigravityAuthStatus.email === activeEmail) ?? null,
+      currentAuthInfo: mockAccounts.find(a => a.antigravity_auth_status.email === activeEmail) ?? null,
       getAccounts: async () => mockAccounts,
       delete: async () => { },
       insertOrUpdateCurrentAccount: async () => { },

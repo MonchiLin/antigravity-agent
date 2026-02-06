@@ -11,7 +11,7 @@ type BaseMockAccount = {
   tier: UserTier;
   nickName?: string;
   userAvatar?: string;
-  accessToken?: string;
+  apiKey?: string;
   idToken?: string;
   quotas?: Partial<AccountAdditionData>;
 };
@@ -168,15 +168,15 @@ const baseMockAccounts: BaseMockAccount[] = [
 function makeAccount(base: BaseMockAccount): AntigravityAccount {
   const [local] = base.email.split('@');
   return {
-    antigravityAuthStatus: {
-      apiKey: base.accessToken ?? `sk_mock_${local}`,
+    antigravity_auth_status: {
+      api_key: base.apiKey ?? `sk_mock_${local}`,
       email: base.email,
       name: base.nickName || base.planName,
       // Mocking nested properties if needed for backward compatibility or future use,
       // but based on current type definition, we only need core fields.
     },
-    oauthToken: null,
-    userStatus: null
+    oauth_token: null,
+    user_status: null
   };
 }
 
@@ -206,6 +206,7 @@ function makeSessionItem(
     claudeQuoteRestIn: addition.claudeQuoteRestIn,
     tier: base.tier,
     apiKey: `sk_${local}`,
+    persisted: true,
   };
 }
 
@@ -241,6 +242,7 @@ const longEmailItem: AccountSessionListAccountItem = {
   claudeQuoteRestIn: '2025-12-22T09:00:00Z',
   tier: 'g1-pro-tier',
   apiKey: 'sk_mock_long_email',
+  persisted: true,
 };
 
 export const mockAccounts = baseMockAccounts.map(makeAccount);

@@ -168,7 +168,7 @@ export class StatusBarManager {
             const currentAccount = await accRes.json() as AntigravityAccount | null;
             this.currentAccount = currentAccount;
 
-            if (!currentAccount || !currentAccount.antigravityAuthStatus?.email) {
+            if (!currentAccount || !currentAccount.antigravity_auth_status?.email) {
                 this.metricsItem.text = `$(antigravity-logo) ${t('status.none')}`;
                 this.metricsItem.tooltip = t('status.noAccount');
 
@@ -177,7 +177,7 @@ export class StatusBarManager {
                 return;
             }
 
-            const email = currentAccount.antigravityAuthStatus.email;
+            const email = currentAccount.antigravity_auth_status.email;
 
             // 2. Get Metrics
             const metricRes = await fetch(`${this.API_BASE}/${API_CONFIG.ENDPOINTS.GET_METRICS}`, {
@@ -220,7 +220,7 @@ export class StatusBarManager {
         if (!metrics) return;
 
         // --- Render User Item ---
-        let email = currentAccount?.antigravityAuthStatus.email || '';
+        let email = currentAccount?.antigravity_auth_status?.email || '';
         if (this.isMaskingEnabled && email) {
             try {
                 email = maskEmail(email);
@@ -269,16 +269,16 @@ export class StatusBarManager {
 
         // 1. Header: User & Plan
         // Use tier_id as the definitive plan identifier
-        // userStatus -> rawData -> plan -> tier_id
-        let plan = currentAccount.userStatus?.rawData?.plan?.tier_id || 'UNKNOWN';
+        // user_status -> raw_data -> plan -> tier_id
+        let plan = currentAccount.user_status?.raw_data?.plan?.tier_id || 'UNKNOWN';
 
         // Prettify if it looks like a slug (contains underscores or dashes)
         if (plan.includes('_') || plan.includes('-')) {
             plan = plan.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
-        // userStatus -> rawData -> plan_name (Nickname)
-        const nickname = currentAccount.userStatus?.rawData?.plan_name;
+        // user_status -> raw_data -> plan_name (Nickname)
+        const nickname = currentAccount.user_status?.raw_data?.plan_name;
         const userDisplay = nickname ? `${nickname} (${displayEmail})` : displayEmail;
 
         md.appendMarkdown(`**${t('status.tooltip.account')}**: ${userDisplay} &nbsp;|&nbsp; **${t('status.tooltip.plan')}**: ${plan}\n\n`);

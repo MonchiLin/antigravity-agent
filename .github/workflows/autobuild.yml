@@ -125,6 +125,10 @@ jobs:
         working-directory: ./vscode-extension
         run: npm ci
 
+      - name: Type Check Extension
+        working-directory: ./vscode-extension
+        run: npm run check
+
       - name: Build and Package Extension (Nightly)
         working-directory: ./vscode-extension
         # Use dynamic filename based on package.json version
@@ -149,6 +153,5 @@ jobs:
           
           # Publish the file we just built
           npx ovsx publish ./antigravity-agent-nightly.vsix --pat "$OVSX_PAT"
-
 
 

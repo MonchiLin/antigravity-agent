@@ -40,7 +40,7 @@ async fn get_current_account() -> impl Responder {
 #[post("/api/save_antigravity_current_account")]
 async fn save_current_account() -> impl Responder {
     match crate::services::account::backup_current().await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
@@ -53,7 +53,7 @@ struct RestoreRequest {
 #[post("/api/restore_antigravity_account")]
 async fn restore_account(req: web::Json<RestoreRequest>) -> impl Responder {
     match crate::services::account::restore(req.account_name.clone()).await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
@@ -66,7 +66,7 @@ struct SwitchAccountRequest {
 #[post("/api/switch_to_antigravity_account")]
 async fn switch_account(req: web::Json<SwitchAccountRequest>) -> impl Responder {
     match crate::services::account::switch(req.account_name.clone()).await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
@@ -74,7 +74,7 @@ async fn switch_account(req: web::Json<SwitchAccountRequest>) -> impl Responder 
 #[post("/api/clear_all_antigravity_data")]
 async fn clear_data() -> impl Responder {
     match crate::services::account::clear_all_data().await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
@@ -82,7 +82,7 @@ async fn clear_data() -> impl Responder {
 #[post("/api/sign_in_new_antigravity_account")]
 async fn sign_in_new() -> impl Responder {
     match crate::services::account::sign_in_new().await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
@@ -124,7 +124,7 @@ async fn refresh_quota(
     };
 
     match crate::services::account::trigger_quota_refresh(&config_dir, req.email.clone()).await {
-        Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
+        Ok(result) => HttpResponse::Ok().json(result),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }

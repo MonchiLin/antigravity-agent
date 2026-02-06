@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"],
+      "@tauri-apps/api/core": ["src/shim/tauri-api.ts"],
+      "@tauri-apps/plugin-http": ["src/shim/tauri-http.ts"]
+    }
+  },
+  "include": ["src/webview/**/*"]
+}

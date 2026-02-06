@@ -1,14 +1,5 @@
 import { universalInvoke } from '@/lib/invoke-adapter';
-
-export interface TriggerResult {
-    email: string;
-    triggered_models: string[];
-    failed_models: string[];
-    skipped_models: string[];
-    skipped_details: string[];
-    success: boolean;
-    message: string;
-}
+import type { TriggerResult } from '@/commands/types/account.types.ts';
 
 export class AccountTriggerCommands {
     /**

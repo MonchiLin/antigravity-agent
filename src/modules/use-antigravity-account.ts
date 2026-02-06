@@ -55,10 +55,9 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
     try {
       // 1. 获取当前 Antigravity 用户信息
       const currentInfo = await AccountCommands.getCurrentAntigravityAccount();
-      console.log("insertOrUpdateCurrentAccount", currentInfo)
 
       // 2. 检查是否有有效的用户信息（通过API Key或用户状态判断）
-      if (currentInfo?.antigravityAuthStatus.apiKey) {
+      if (currentInfo?.antigravity_auth_status?.api_key) {
         // 3. 执行保存操作
         await AccountCommands.saveAntigravityCurrentAccount();
 
@@ -112,10 +111,13 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
     try {
       // 从后端获取账户列表
       const accounts = await AccountCommands.getAntigravityAccounts();
+      const validAccounts = accounts.filter(
+        (account) => typeof account?.antigravity_auth_status?.email === 'string' && account.antigravity_auth_status.email.trim() !== ''
+      );
 
       // 同步更新 store 中的状态
-      set({ accounts });
-      return accounts;
+      set({ accounts: validAccounts });
+      return validAccounts;
     } catch (error) {
       logger.error('获取用户列表失败', {
         module: 'UserManagement',
@@ -127,4 +129,9 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
   }
 }));
 
-export const useCurrentAntigravityAccount: () => AntigravityAccount | undefined = () => useAntigravityAccount(state => state.accounts.find(user => user.antigravityAuthStatus.email === state.currentAuthInfo?.antigravityAuthStatus.email));
+export const useCurrentAntigravityAccount: () => AntigravityAccount | undefined = () =>
+  useAntigravityAccount((state) =>
+    state.accounts.find(
+      (user) => user.antigravity_auth_status?.email === state.currentAuthInfo?.antigravity_auth_status?.email
+    )
+  );

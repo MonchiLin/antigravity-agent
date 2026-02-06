@@ -131,7 +131,9 @@ jobs:
         working-directory: ./vscode-extension
         run: npm ci
 
-
+      - name: Type Check Extension
+        working-directory: ./vscode-extension
+        run: npm run check
 
       - name: Build and Package Extension
         working-directory: ./vscode-extension

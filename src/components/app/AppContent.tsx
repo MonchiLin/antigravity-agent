@@ -81,7 +81,7 @@ export function AppContent() {
         } catch (e) {
           logger.error(t('notifications:fetchUserDataFailed'), {
             module: 'AppContent',
-            email: user.antigravityAuthStatus.email,
+            email: user.antigravity_auth_status.email,
             error: e instanceof Error ? e.message : String(e)
           })
         }
@@ -182,7 +182,7 @@ export function AppContent() {
 
 
   const accountsWithData: AccountSessionListAccountItem[] = accounts.map((account) => {
-    const accountAdditionDatum = accountAdditionData.data[account.antigravityAuthStatus.email]
+    const accountAdditionDatum = accountAdditionData.data[account.antigravity_auth_status.email]
 
     return {
       geminiProQuote: accountAdditionDatum?.geminiProQuote ?? -1,
@@ -193,13 +193,13 @@ export function AppContent() {
       geminiImageQuoteRestIn: accountAdditionDatum?.geminiImageQuoteRestIn,
       claudeQuote: accountAdditionDatum?.claudeQuote ?? -1,
       claudeQuoteRestIn: accountAdditionDatum?.claudeQuoteRestIn,
-      email: account.antigravityAuthStatus.email,
-      nickName: account.antigravityAuthStatus.name,
+      email: account.antigravity_auth_status.email,
+      nickName: account.antigravity_auth_status.name,
       userAvatar: accountAdditionDatum?.userAvatar ?? "",
-      apiKey: account.antigravityAuthStatus.apiKey,
+      apiKey: account.antigravity_auth_status.api_key ?? '',
       // 使用后端返回的真实 tier_id，如果获取失败或为 null 则回退到 'free-tier'
-      tier: (account.userStatus?.rawData?.plan?.tier_id || 'free-tier') as UserTier,
-      persisted: account.oauthToken !== null,
+      tier: (account.user_status?.raw_data?.plan?.tier_id || 'free-tier') as UserTier,
+      persisted: account.oauth_token !== null,
     }
   })
 
@@ -220,7 +220,7 @@ export function AppContent() {
     })
     .sort((a, b) => {
       // 当前账户始终置顶
-      const currentEmail = currentAntigravityAccount?.antigravityAuthStatus.email;
+      const currentEmail = currentAntigravityAccount?.antigravity_auth_status.email;
       if (a.email === currentEmail) return -1;
       if (b.email === currentEmail) return 1;
 
@@ -275,7 +275,7 @@ export function AppContent() {
           onSwitch={handleSwitchAccount}
           onDelete={handleDeleteBackup}
           onSelect={handleUserClick}
-          currentUserEmail={currentAntigravityAccount?.antigravityAuthStatus.email}
+          currentUserEmail={currentAntigravityAccount?.antigravity_auth_status.email}
         />
       </section>
 

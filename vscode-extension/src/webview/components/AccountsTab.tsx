@@ -18,6 +18,10 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ privacyMode }) => {
         switchToAccount
     } = useAntigravityAccount();
     const additionData = useAccountAdditionData();
+    const validAccounts = accounts.filter(
+        (acc) => typeof acc?.antigravity_auth_status?.email === 'string' && acc.antigravity_auth_status.email.trim() !== ''
+    );
+    const currentEmail = currentAuthInfo?.antigravity_auth_status?.email;
 
     // 初始化加载
     useEffect(() => {
@@ -71,12 +75,12 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ privacyMode }) => {
     return (
         <div className="accounts-container">
             <div className="accounts-grid">
-                {accounts.map((acc) => (
+                {validAccounts.map((acc) => (
                     <AccountCard
-                        key={acc.antigravityAuthStatus.email}
+                        key={acc.antigravity_auth_status.email}
                         account={acc}
-                        data={additionData.data[acc.antigravityAuthStatus.email]}
-                        isCurrent={currentAuthInfo?.antigravityAuthStatus.email === acc.antigravityAuthStatus.email}
+                        data={additionData.data[acc.antigravity_auth_status.email]}
+                        isCurrent={currentEmail === acc.antigravity_auth_status.email}
                         onSwitch={handleSwitchAccount}
                         privacyMode={privacyMode}
                     />

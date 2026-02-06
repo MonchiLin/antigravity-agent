@@ -121,5 +121,3 @@ pub fn extract_refresh_token(oauth_token_raw: Option<&str>) -> Option<String> {
         Err(_) => None,
     }
 }
-
-

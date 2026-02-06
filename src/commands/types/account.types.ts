@@ -1,25 +1,32 @@
-
-// Antigravity 账户响应结构
+// Antigravity account response
 export interface AntigravityAccount {
-  antigravityAuthStatus: AntigravityAuthStatus
-  oauthToken: OAuthTokenDecoded | null
-  userStatus: UserStatusDecoded | null
+  antigravity_auth_status: AntigravityAuthStatus
+  oauth_token: OAuthTokenDecoded | null
+  user_status: UserStatusDecoded | null
+}
+
+export interface AntigravityAuthStatus {
+  api_key?: string
+  email: string
+  name?: string
+  user_status_proto_binary_base64?: string
+  [key: string]: unknown
 }
 
 export interface OAuthTokenDecoded {
-  sentinelKey: string
-  accessToken: string
-  refreshToken: string
-  tokenType: string
-  expirySeconds: number | null
+  sentinel_key: string
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expiry_seconds: number | null
 }
 
 export type UserStatusDecoded = UserStatusProtoDecoded
 
 export interface UserStatusProtoDecoded {
-  sentinelKey: string
-  rawDataType: 'proto'
-  rawData: UserStatusProtoRawData
+  sentinel_key: string
+  raw_data_type: 'proto' | string
+  raw_data: UserStatusProtoRawData
 }
 
 export interface UserStatusProtoRawData {
@@ -85,25 +92,32 @@ export interface UserStatusPlan {
   upgrade_message: string
 }
 
-// 原 Antigravity 账户信息（现作为内部字段）
-// 根据实际 API 返回调整：不再包含 auth/context 嵌套结构，而是直接包含 info
-export interface AntigravityAuthStatus {
-  apiKey: string
-  email: string
-  name: string
-  userStatusProtoBinaryBase64?: string
-}
-
-// 对应 Rust 的 AccountMetrics 结构
 export interface QuotaItem {
-  model_name: string;
-  percentage: number;
-  reset_text: string;
+  model_name: string
+  percentage: number
+  reset_text: string
 }
 
 export interface AccountMetrics {
-  email: string;
-  user_id: string;
-  avatar_url: string;
-  quotas: QuotaItem[];
+  email: string
+  user_id: string
+  avatar_url: string
+  quotas: QuotaItem[]
+}
+
+export interface TriggerResult {
+  email: string
+  triggered_models: string[]
+  failed_models: string[]
+  skipped_models: string[]
+  skipped_details: string[]
+  success: boolean
+  message: string
+}
+
+export interface CommandResult {
+  ok: boolean
+  code: string
+  message: string
+  details?: unknown
 }

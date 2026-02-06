@@ -73,8 +73,29 @@ jobs:
         # TODO: 暂时允许 clippy 警告，待后续逐步修复
         continue-on-error: true
 
+  test-vscode-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: Install extension dependencies
+        working-directory: ./vscode-extension
+        run: npm ci
+
+      - name: Run extension type check
+        working-directory: ./vscode-extension
+        run: npm run check
+
   build-test:
-    needs: [test-frontend, test-backend]
+    needs: [test-frontend, test-backend, test-vscode-extension]
     strategy:
       fail-fast: false
       matrix:

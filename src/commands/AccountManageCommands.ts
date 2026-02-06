@@ -1,5 +1,6 @@
 import { universalInvoke } from '@/lib/invoke-adapter';
 import type { BackupData, RestoreResult } from './types/account-manage.types.ts';
+import type { CommandResult } from './types/account.types.ts';
 
 /**
  * 账户与备份综合命令
@@ -30,7 +31,7 @@ export class AccountManageCommands {
     return universalInvoke('decrypt_config_data', { encryptedData: encryptedData, password });
   }
 
-  static signInNewAntigravityAccount(): Promise<string> {
+  static signInNewAntigravityAccount(): Promise<CommandResult> {
     return universalInvoke('sign_in_new_antigravity_account');
   }
 }

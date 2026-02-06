@@ -44,10 +44,10 @@ const maskEmail = (email: string): string => {
 
 export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurrent, onSwitch, privacyMode }) => {
     const { t } = useTranslation(['common', 'dashboard']);
-    const email = account.antigravityAuthStatus.email;
+    const email = account.antigravity_auth_status.email;
     const displayEmail = privacyMode ? maskEmail(email) : email;
-    const planName = account.userStatus?.rawData?.plan_name;
-    const tierId = account.userStatus?.rawData?.plan?.tier_id;
+    const planName = account.user_status?.raw_data?.plan_name;
+    const tierId = account.user_status?.raw_data?.plan?.tier_id;
 
     return (
         <div className={`card flex flex-col gap-2.5 ${isCurrent ? 'card-active' : ''}`}>
