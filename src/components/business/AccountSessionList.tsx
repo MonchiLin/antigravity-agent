@@ -1,11 +1,11 @@
 ﻿import React from 'react';
 import { AccountSessionListCard } from './AccountSessionListCard';
-import {motion, AnimatePresence, Variants} from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern.tsx";
 import { maskEmail, maskName } from "@/lib/string-masking.ts";
-import {UserTier} from "@/modules/use-account-addition-data.ts";
-import {useAppSettings} from "@/modules/use-app-settings.ts";
-import {useTranslation} from 'react-i18next';
+import { UserTier } from "@/modules/use-account-addition-data.ts";
+import { useAppSettings } from "@/modules/use-app-settings.ts";
+import { useTranslation } from 'react-i18next';
 
 export interface AccountSessionListAccountItem {
   geminiProQuote: number | -1
@@ -21,6 +21,7 @@ export interface AccountSessionListAccountItem {
   userAvatar: string;
   tier: UserTier;
   apiKey: string;
+  persisted: boolean;
 }
 
 export interface AccountSessionListProps {
@@ -68,13 +69,13 @@ const itemVariants: Variants = {
 };
 
 export function AccountSessionList({
-                                     accounts,
-                                     currentUserEmail,
-                                     onSelect,
-                                     onSwitch,
-                                     onDelete,
-                                   }: AccountSessionListProps) {
-  const {t} = useTranslation('dashboard');
+  accounts,
+  currentUserEmail,
+  onSelect,
+  onSwitch,
+  onDelete,
+}: AccountSessionListProps) {
+  const { t } = useTranslation('dashboard');
   const privateMode = useAppSettings(state => state.privateMode);
 
   return (
@@ -107,6 +108,7 @@ export function AccountSessionList({
               claudeQuoteRestIn={account.claudeQuoteRestIn}
               userAvatar={account.userAvatar}
               tier={account.tier}
+              persisted={account.persisted}
               isCurrentUser={currentUserEmail === account.email}
               email={privateMode ? maskEmail(account.email) : account.email}
               nickName={privateMode ? maskName(account.nickName) : account.nickName}

@@ -73,10 +73,10 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ privacyMode }) => {
             <div className="accounts-grid">
                 {accounts.map((acc) => (
                     <AccountCard
-                        key={acc.context.email}
+                        key={acc.antigravityAuthStatus.email}
                         account={acc}
-                        data={additionData.data[acc.context.email]}
-                        isCurrent={currentAuthInfo?.context.email === acc.context.email}
+                        data={additionData.data[acc.antigravityAuthStatus.email]}
+                        isCurrent={currentAuthInfo?.antigravityAuthStatus.email === acc.antigravityAuthStatus.email}
                         onSwitch={handleSwitchAccount}
                         privacyMode={privacyMode}
                     />

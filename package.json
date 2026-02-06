@@ -49,6 +49,7 @@
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.5.0",
     "tailwind-merge": "^2.6.0",
+    "worker-timers": "^8.0.30",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

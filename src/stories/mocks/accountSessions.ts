@@ -164,42 +164,19 @@ const baseMockAccounts: BaseMockAccount[] = [
   },
 ];
 
+
 function makeAccount(base: BaseMockAccount): AntigravityAccount {
   const [local] = base.email.split('@');
   return {
-    auth: {
-      access_token: base.accessToken ?? `sk_mock_${local}`,
-      refresh_token: base.idToken ?? `id_mock_${local}`,
-      created_at: Date.now() + 60 * 60 * 1000,
-      token_type: 'oauth',
-    },
-    context: {
+    antigravityAuthStatus: {
+      apiKey: base.accessToken ?? `sk_mock_${local}`,
       email: base.email,
-      models: {
-        items: [],
-        recommended: { category: 'Recommended', model_names: [] },
-        default_model: null,
-      },
-      plan: {
-        tier_id: base.tier,
-        tier_name: base.tier,
-        display_name: base.planName,
-        upgrade_url: '',
-        upgrade_message: '',
-      },
-      plan_name: base.planName,
-      status: 1,
+      name: base.nickName || base.planName,
+      // Mocking nested properties if needed for backward compatibility or future use,
+      // but based on current type definition, we only need core fields.
     },
-    field_5_base64: null,
-    field_7_base64: null,
-    field_9_base64: null,
-    field_10_base64: null,
-    field_11_base64: null,
-    field_15_base64: null,
-    field_16_base64: null,
-    field_17_base64: null,
-    f18_base64: null,
-    subscription: null,
+    oauthToken: null,
+    userStatus: null
   };
 }
 

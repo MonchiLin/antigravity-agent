@@ -36,10 +36,6 @@ pub async fn collect_contents(
     // 读取Antigravity账户目录中的JSON文件
     let antigravity_dir = config_dir.join("antigravity-accounts");
 
-    if !antigravity_dir.exists() {
-        return Ok(backups_with_content);
-    }
-
     for entry in fs::read_dir(&antigravity_dir).map_err(|e| format!("读取用户目录失败: {}", e))?
     {
         let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
@@ -127,48 +123,36 @@ pub async fn restore_files(
 }
 
 /// 删除指定备份
-pub async fn delete(
-    config_dir: &std::path::Path,
-    name: String,
-) -> Result<String, String> {
+pub async fn delete(config_dir: &std::path::Path, name: String) -> Result<String, String> {
     // 只删除Antigravity账户JSON文件
     let antigravity_dir = config_dir.join("antigravity-accounts");
     let antigravity_file = antigravity_dir.join(format!("{}.json", name));
 
-    if antigravity_file.exists() {
-        fs::remove_file(&antigravity_file).map_err(|e| format!("删除用户文件失败: {}", e))?;
-        Ok(format!("删除用户成功: {}", name))
-    } else {
-        Err("用户文件不存在".to_string())
-    }
+    fs::remove_file(&antigravity_file).map_err(|e| format!("删除用户文件失败: {}", e))?;
+    Ok(format!("删除用户成功: {}", name))
 }
 
 /// 清空所有备份
 pub async fn clear_all(config_dir: &std::path::Path) -> Result<String, String> {
     let antigravity_dir = config_dir.join("antigravity-accounts");
 
-    if antigravity_dir.exists() {
-        // 读取目录中的所有文件
-        let mut deleted_count = 0;
-        for entry in
-            fs::read_dir(&antigravity_dir).map_err(|e| format!("读取用户目录失败: {}", e))?
-        {
-            let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
-            let path = entry.path();
+    // 读取目录中的所有文件
+    let mut deleted_count = 0;
+    for entry in fs::read_dir(&antigravity_dir).map_err(|e| format!("读取用户目录失败: {}", e))?
+    {
+        let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
+        let path = entry.path();
 
-            // 只删除 JSON 文件
-            if path.extension().is_some_and(|ext| ext == "json") {
-                fs::remove_file(&path)
-                    .map_err(|e| format!("删除文件 {} 失败: {}", path.display(), e))?;
-                deleted_count += 1;
-            }
+        // 只删除 JSON 文件
+        if path.extension().is_some_and(|ext| ext == "json") {
+            fs::remove_file(&path)
+                .map_err(|e| format!("删除文件 {} 失败: {}", path.display(), e))?;
+            deleted_count += 1;
         }
-
-        Ok(format!(
-            "已清空所有用户备份，共删除 {} 个文件",
-            deleted_count
-        ))
-    } else {
-        Ok("用户目录不存在，无需清空".to_string())
     }
+
+    Ok(format!(
+        "已清空所有用户备份，共删除 {} 个文件",
+        deleted_count
+    ))
 }

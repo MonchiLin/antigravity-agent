@@ -3,7 +3,6 @@ use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde_json::json;
 
-
 mod middleware;
 pub mod websocket;
 
@@ -14,11 +13,7 @@ pub mod websocket;
 #[get("/api/is_antigravity_running")]
 async fn status() -> impl Responder {
     let running = crate::services::account::is_running();
-    HttpResponse::Ok().json(json!({
-        "status": if running { "running" } else { "stopped" },
-        "service": "antigravity-agent",
-        "is_running": running
-    }))
+    HttpResponse::Ok().json(running)
 }
 
 #[get("/api/get_antigravity_accounts")]
@@ -30,7 +25,7 @@ async fn get_accounts(data: web::Data<AppState>) -> impl Responder {
 
     match crate::services::account::get_all(&config_dir).await {
         Ok(accounts) => HttpResponse::Ok().json(accounts),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -109,7 +104,7 @@ async fn get_metrics(
 
     match crate::services::account::get_metrics(&config_dir, req.email.clone()).await {
         Ok(metrics) => HttpResponse::Ok().json(metrics),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -127,10 +122,10 @@ async fn refresh_quota(
         let state = data.inner.lock();
         state.config_dir.clone()
     };
-    
+
     match crate::services::account::trigger_quota_refresh(&config_dir, req.email.clone()).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -147,7 +142,7 @@ async fn collect_backups(data: web::Data<AppState>) -> impl Responder {
 
     match crate::services::backup::collect_contents(&config_dir).await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -163,7 +158,7 @@ async fn restore_backups(
 
     match crate::services::backup::restore_files(&config_dir, req.into_inner()).await {
         Ok(res) => HttpResponse::Ok().json(res),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -184,7 +179,7 @@ async fn delete_backup(
 
     match crate::services::backup::delete(&config_dir, req.name.clone()).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -197,7 +192,7 @@ async fn clear_backups(data: web::Data<AppState>) -> impl Responder {
 
     match crate::services::backup::clear_all(&config_dir).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -214,7 +209,7 @@ struct BoolStateRequest {
 async fn get_all_settings(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::settings::get_all(&app).await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -225,7 +220,7 @@ async fn save_tray_state(
 ) -> impl Responder {
     match crate::services::settings::save_system_tray_state(&app, req.enabled).await {
         Ok(val) => HttpResponse::Ok().json(json!({ "success": true, "value": val })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -236,7 +231,7 @@ async fn save_silent_start(
 ) -> impl Responder {
     match crate::services::settings::save_silent_start_state(&app, req.enabled).await {
         Ok(val) => HttpResponse::Ok().json(json!({ "success": true, "value": val })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -247,7 +242,7 @@ async fn save_private_mode(
 ) -> impl Responder {
     match crate::services::settings::save_private_mode_state(&app, req.enabled).await {
         Ok(val) => HttpResponse::Ok().json(json!({ "success": true, "value": val })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -258,7 +253,7 @@ async fn save_debug_mode(
 ) -> impl Responder {
     match crate::services::settings::save_debug_mode_state(&app, req.enabled).await {
         Ok(val) => HttpResponse::Ok().json(json!({ "success": true, "value": val })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -266,7 +261,7 @@ async fn save_debug_mode(
 async fn get_language(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::settings::get_language(&app).await {
         Ok(lang) => HttpResponse::Ok().json(json!({ "language": lang })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -282,7 +277,7 @@ async fn set_language(
 ) -> impl Responder {
     match crate::services::settings::set_language(&app, req.language.clone()).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -294,7 +289,7 @@ async fn set_language(
 async fn get_platform_info() -> impl Responder {
     match crate::services::platform::get_platform_info().await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -302,7 +297,7 @@ async fn get_platform_info() -> impl Responder {
 async fn find_installations() -> impl Responder {
     match crate::services::platform::find_antigravity_installations().await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -315,7 +310,7 @@ struct PathRequest {
 async fn validate_executable(req: web::Json<PathRequest>) -> impl Responder {
     match crate::services::platform::validate_antigravity_executable(req.path.clone()).await {
         Ok(valid) => HttpResponse::Ok().json(json!({ "valid": valid })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -323,7 +318,7 @@ async fn validate_executable(req: web::Json<PathRequest>) -> impl Responder {
 async fn detect_installation() -> impl Responder {
     match crate::services::platform::detect_antigravity_installation().await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -331,7 +326,7 @@ async fn detect_installation() -> impl Responder {
 async fn detect_executable() -> impl Responder {
     match crate::services::platform::detect_antigravity_executable().await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -339,7 +334,7 @@ async fn detect_executable() -> impl Responder {
 async fn save_executable(req: web::Json<PathRequest>) -> impl Responder {
     match crate::services::platform::save_antigravity_executable(req.path.clone()).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -347,7 +342,7 @@ async fn save_executable(req: web::Json<PathRequest>) -> impl Responder {
 async fn get_paths() -> impl Responder {
     match crate::services::platform::get_current_paths().await {
         Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -363,17 +358,19 @@ struct CryptoRequest {
 
 #[post("/api/encrypt_config_data")]
 async fn encrypt_data(req: web::Json<CryptoRequest>) -> impl Responder {
-    match crate::services::crypto::encrypt_config_data(req.data.clone(), req.password.clone()).await {
+    match crate::services::crypto::encrypt_config_data(req.data.clone(), req.password.clone()).await
+    {
         Ok(res) => HttpResponse::Ok().json(json!({ "result": res })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
 #[post("/api/decrypt_config_data")]
 async fn decrypt_data(req: web::Json<CryptoRequest>) -> impl Responder {
-    match crate::services::crypto::decrypt_config_data(req.data.clone(), req.password.clone()).await {
+    match crate::services::crypto::decrypt_config_data(req.data.clone(), req.password.clone()).await
+    {
         Ok(res) => HttpResponse::Ok().json(json!({ "result": res })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -392,9 +389,11 @@ async fn update_tray(
     app: web::Data<tauri::AppHandle>,
     req: web::Json<UpdateTrayRequest>,
 ) -> impl Responder {
-    match crate::services::system::tray::update_menu(&app, req.accounts.clone(), req.labels.clone()).await {
+    match crate::services::system::tray::update_menu(&app, req.accounts.clone(), req.labels.clone())
+        .await
+    {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -402,7 +401,7 @@ async fn update_tray(
 async fn minimize_tray(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::system::tray::minimize(&app).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -410,7 +409,7 @@ async fn minimize_tray(app: web::Data<tauri::AppHandle>) -> impl Responder {
 async fn restore_tray(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::system::tray::restore(&app).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -418,7 +417,7 @@ async fn restore_tray(app: web::Data<tauri::AppHandle>) -> impl Responder {
 async fn is_db_monitor(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::system::db_monitor::is_running(&app).await {
         Ok(val) => HttpResponse::Ok().json(val),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -426,7 +425,7 @@ async fn is_db_monitor(app: web::Data<tauri::AppHandle>) -> impl Responder {
 async fn start_db_monitor(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::system::db_monitor::start(&app).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -434,7 +433,7 @@ async fn start_db_monitor(app: web::Data<tauri::AppHandle>) -> impl Responder {
 async fn stop_db_monitor(app: web::Data<tauri::AppHandle>) -> impl Responder {
     match crate::services::system::db_monitor::stop(&app).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -446,9 +445,11 @@ struct FileWriteRequest {
 
 #[post("/api/write_text_file")]
 async fn write_file(req: web::Json<FileWriteRequest>) -> impl Responder {
-    match crate::services::system::logging::write_text_file(req.path.clone(), req.content.clone()).await {
+    match crate::services::system::logging::write_text_file(req.path.clone(), req.content.clone())
+        .await
+    {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -457,7 +458,7 @@ async fn write_log(req: web::Json<serde_json::Value>) -> impl Responder {
     // req is the raw json object
     match crate::services::system::logging::write_frontend_log(req.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -465,7 +466,7 @@ async fn write_log(req: web::Json<serde_json::Value>) -> impl Responder {
 async fn get_log_dir() -> impl Responder {
     match crate::services::system::logging::get_directory_path().await {
         Ok(path) => HttpResponse::Ok().json(json!(path)), // Return pure string or wrapped? Command returned string. Adapt to json.
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -473,7 +474,7 @@ async fn get_log_dir() -> impl Responder {
 async fn open_log() -> impl Responder {
     match crate::services::system::logging::open_directory().await {
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 
@@ -486,7 +487,7 @@ struct LaunchRequest {
 async fn install_ext(req: web::Json<LaunchRequest>) -> impl Responder {
     match crate::services::system::extension::launch_and_install(req.url.clone()).await {
         Ok(msg) => HttpResponse::Ok().json(json!({ "success": true, "message": msg })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e }))
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
 

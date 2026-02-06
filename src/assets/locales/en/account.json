@@ -1,7 +1,8 @@
 {
   "actions": {
     "delete": "Delete",
-    "use": "Use"
+    "use": "Use",
+    "start": "Start"
   },
   "tooltip": {
     "currentSession": "Current Session"
@@ -11,6 +12,10 @@
       "title": "This symbol means the built-in data does not cover the current account tier",
       "description": "This is not your fault. To help resolve this, please take a screenshot",
       "reportLink": "Report to Developer"
+    },
+    "notPersisted": {
+      "title": "Account Credential Not Persisted",
+      "description": "Since Antigravity (>=1.16.5) only saves credentials upon exit, you must close Antigravity once to complete persistence."
     }
   },
   "accountDetail": {

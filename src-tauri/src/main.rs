@@ -1,7 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::{prelude::*, EnvFilter};
@@ -43,11 +42,8 @@ fn init_tracing() -> WorkerGuard {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_filter));
 
-    // 创建日志目录
-    let log_dir = crate::directories::get_log_directory();
-    if let Err(e) = fs::create_dir_all(&log_dir) {
-        eprintln!("警告：无法创建日志目录 {}: {}", log_dir.display(), e);
-    }
+    // 初始化日志目录（失败时直接中止）
+    let _log_dir = crate::directories::get_log_directory();
 
     // 创建滚动文件写入器（带脱敏）
     let file_writer =
@@ -106,9 +102,9 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_http::init())
         // 注意：这里我们使用 external state management，以便让 HTTP Server 共享同一个 State
-        .manage(app_state.clone()) 
+        .manage(app_state.clone())
         .setup(move |app| {
-            setup::init(app)?; 
+            setup::init(app)?;
 
             // 启动 HTTP Server
             // 传递相同的 app_state 实例给 server

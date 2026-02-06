@@ -4,7 +4,8 @@ import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-mot
 import { Tooltip } from 'antd';
 import { cn } from "@/lib/utils.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
-import { ArrowLeftRight, Crown, Gem, Trash2, TriangleAlert } from 'lucide-react';
+import { ArrowLeftRight, Crown, Gem, Play, Trash2, TriangleAlert } from 'lucide-react';
+import { useAntigravityIsRunning } from "@/hooks/use-antigravity-is-running.ts";
 import { BaseButton } from "@/components/base-ui/BaseButton.tsx";
 import { Variants } from "motion/react";
 import { LiquidProgressBar } from "@/components/ui/liquid-progress-bar.tsx";
@@ -19,6 +20,7 @@ interface UserSessionCardProps {
   userAvatar: string;
   email: string;
   tier: UserTier;
+  persisted: boolean;
   geminiProQuote: number | -1
   geminiProQuoteRestIn: string
   geminiFlashQuote: number | -1
@@ -111,11 +113,11 @@ const childVariants: Variants = {
 
 export function AccountSessionListCard(props: UserSessionCardProps) {
   const { t } = useTranslation(['account', 'common']);
+  const isRunning = useAntigravityIsRunning(state => state.isRunning);
   let { tier } = props;
-  const unknownTier = !["free-tier", "g1-pro-tier", "g1-ultra-tier"].includes(tier);
 
   // 如果是未知层级，使用专门定义的未知样式，否则使用对应层级的样式
-  const currentStyles = unknownTier ? unknownStyle : tierVisualStyles[tier];
+  const currentStyles = tierVisualStyles[tier] || unknownStyle;
 
   const { boxShadow, hoverBoxShadow, ...otherStyles } = currentStyles;
 
@@ -291,11 +293,11 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
               e.stopPropagation();
               props.onSwitch()
             }}
-            disabled={props.isCurrentUser}
+            disabled={(isRunning === false) ? false : props.isCurrentUser}
             variant="outline"
-            leftIcon={<ArrowLeftRight className={"w-3 h-3"} />}
+            leftIcon={(isRunning === false) ? <Play className="w-3 h-3" /> : <ArrowLeftRight className={"w-3 h-3"} />}
           >
-            {t('account:actions.use')}
+            {(isRunning === false) ? t('account:actions.start') : t('account:actions.use')}
           </BaseButton>
           <BaseButton
             onClick={e => {
@@ -310,15 +312,15 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           </BaseButton>
         </motion.div>
       </div>
-      {(unknownTier) && (
+      {(!props.persisted) && (
         <div className="absolute bottom-3 right-3 z-50">
           <Tooltip title={
             <div className="flex flex-col gap-0.5">
               <span>
-                {t('account:warning.unknownTier.title')} <span className="font-mono bg-white/10 px-1 rounded">[{props.tier}]</span>
+                {t('account:warning.notPersisted.title')}
               </span>
               <span>
-                {t('account:warning.unknownTier.description')} <a href="https://github.com/MonchiLin/antigravity-agent/issues" target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200 underline decoration-auto underline-offset-2">{t('account:warning.unknownTier.reportLink')}</a>
+                {t('account:warning.notPersisted.description')}
               </span>
             </div>
           }>
@@ -327,41 +329,5 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
         </div>
       )}
     </motion.div>
-  );
-}
-
-// ==========================================
-// 子组件：进度条
-// ==========================================
-
-function UsageItem({ label, percentage, color, trackColor }: {
-  label: string,
-  percentage: number,
-  color: string,
-  trackColor: string
-}) {
-  const { t } = useTranslation('common');
-  const isUnknown = percentage === -1;
-  const displayPercentage = isUnknown ? 0 : Math.round(percentage * 100);
-
-  return (
-    <div className="group">
-      <div className="flex justify-between mb-2 text-sm">
-        <span className="text-slate-700 font-medium">{label}</span>
-        <span className="text-slate-400 font-mono tabular-nums">
-          {isUnknown ? t('common:status.unknown') : `${displayPercentage}%`}
-        </span>
-      </div>
-      <div className={cn("h-2.5 w-full rounded-full overflow-hidden transition-colors duration-300", trackColor)}>
-        <motion.div
-          className={cn("h-full rounded-full shadow-sm", color)}
-          // 这里不需要 variants，因为它有自己独立的逻辑（width 动画）
-          // 但它会被父级 Container 的 Stagger 影响开始时间，效果刚刚好
-          initial={{ width: 0 }}
-          animate={{ width: `${displayPercentage}%` }}
-          transition={{ type: "spring", stiffness: 40, damping: 12, delay: 0.2 }}
-        />
-      </div>
-    </div>
   );
 }

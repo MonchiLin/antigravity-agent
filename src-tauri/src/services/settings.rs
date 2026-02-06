@@ -10,13 +10,7 @@ pub async fn save_system_tray_state(app: &AppHandle, enabled: bool) -> Result<bo
         system_tray.disable(app)?;
     }
 
-    let settings_manager = app.state::<crate::app_settings::AppSettingsManager>();
-    settings_manager.update_settings(|settings| {
-        settings.system_tray_enabled = enabled;
-    })?;
-
-    let settings = settings_manager.get_settings();
-    Ok(settings.system_tray_enabled)
+    Ok(enabled)
 }
 
 /// 保存静默启动状态

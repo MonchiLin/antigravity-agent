@@ -1,23 +1,100 @@
-use crate::antigravity::account::decode_jetski_state_proto;
-use base64::Engine;
+use base64::{
+    engine::general_purpose::{
+        STANDARD as BASE64_STANDARD, STANDARD_NO_PAD as BASE64_STANDARD_NO_PAD,
+        URL_SAFE as BASE64_URL_SAFE, URL_SAFE_NO_PAD as BASE64_URL_SAFE_NO_PAD,
+    },
+    Engine as _,
+};
+mod user_context_view;
+use self::user_context_view::user_context_to_json;
 use prost::Message;
 use rusqlite::{Connection, OptionalExtension};
 use serde_json::{from_str, Value};
 use std::fs;
 
+fn query_item_value(conn: &Connection, key: &str) -> Result<Option<String>, String> {
+    conn.query_row("SELECT value FROM ItemTable WHERE key = ?", [key], |row| {
+        row.get(0)
+    })
+    .optional()
+    .map_err(|e| format!("查询 {} 失败: {}", key, e))
+}
+
+fn decode_base64(raw: &str, field_name: &str) -> Result<Vec<u8>, String> {
+    BASE64_STANDARD
+        .decode(raw)
+        .or_else(|_| BASE64_STANDARD_NO_PAD.decode(raw))
+        .or_else(|_| BASE64_URL_SAFE.decode(raw))
+        .or_else(|_| BASE64_URL_SAFE_NO_PAD.decode(raw))
+        .map_err(|e| format!("{} Base64 解码失败: {}", field_name, e))
+}
+
+fn decode_oauth_token(raw: &str) -> Result<Value, String> {
+    let wrapper_bytes = decode_base64(raw, crate::constants::database::OAUTH_TOKEN)?;
+    let wrapper = crate::proto::state_sync::OAuthTokenWrapper::decode(wrapper_bytes.as_slice())
+        .map_err(|e| format!("oauthToken Wrapper Proto 解码失败: {}", e))?;
+
+    let inner = wrapper
+        .inner
+        .ok_or_else(|| "oauthToken 缺少 inner".to_string())?;
+    let data = inner
+        .data
+        .ok_or_else(|| "oauthToken 缺少 data".to_string())?;
+
+    let oauth_info_bytes =
+        decode_base64(&data.oauth_info_base64, "oauthToken.data.oauth_info_base64")?;
+    let oauth_info = crate::proto::state_sync::OAuthInfo::decode(oauth_info_bytes.as_slice())
+        .map_err(|e| format!("oauthToken OAuthInfo Proto 解码失败: {}", e))?;
+
+    Ok(serde_json::json!({
+        "sentinelKey": inner.sentinel_key,
+        "accessToken": oauth_info.access_token,
+        "refreshToken": oauth_info.refresh_token,
+        "tokenType": oauth_info.token_type,
+        "expirySeconds": oauth_info.expiry.map(|t| t.seconds),
+    }))
+}
+
+fn decode_user_status(raw: &str) -> Result<Value, String> {
+    let wrapper_bytes = decode_base64(raw, crate::constants::database::USER_STATUS)?;
+    let wrapper = crate::proto::state_sync::UserStatusWrapper::decode(wrapper_bytes.as_slice())
+        .map_err(|e| format!("userStatus Wrapper Proto 解码失败: {}", e))?;
+
+    let inner = wrapper
+        .inner
+        .ok_or_else(|| "userStatus 缺少 inner".to_string())?;
+    let data = inner
+        .data
+        .ok_or_else(|| "userStatus 缺少 data".to_string())?;
+
+    let raw_data_bytes = decode_base64(&data.raw_data, "userStatus.data.raw_data")?;
+    let context = crate::proto::state_sync::UserContext::decode(raw_data_bytes.as_slice())
+        .map_err(|e| format!("userStatus raw_data UserContext Proto 解码失败: {}", e))?;
+
+    Ok(serde_json::json!({
+        "sentinelKey": inner.sentinel_key,
+        "rawDataType": "proto",
+        "rawData": user_context_to_json(context),
+    }))
+}
+
+#[derive(serde::Serialize)]
+pub struct AntigravityAccountResponse {
+    pub antigravityAuthStatus: serde_json::Value,
+    pub oauthToken: Option<serde_json::Value>,
+    pub userStatus: Option<serde_json::Value>,
+}
+
 /// 获取所有 Antigravity 账户
-pub async fn get_all(config_dir: &std::path::Path) -> Result<Vec<Value>, String> {
+pub async fn get_all(
+    config_dir: &std::path::Path,
+) -> Result<Vec<AntigravityAccountResponse>, String> {
     tracing::debug!("📋 开始获取所有 Antigravity 账户 (Service)");
     let start_time = std::time::Instant::now();
 
     let result = async {
-        let mut accounts: Vec<(std::time::SystemTime, Value)> = Vec::new();
+        let mut accounts: Vec<(std::time::SystemTime, AntigravityAccountResponse)> = Vec::new();
         let antigravity_dir = config_dir.join("antigravity-accounts");
-
-        if !antigravity_dir.exists() {
-            tracing::info!("📂 备份目录不存在，返回空列表");
-            return Ok(Vec::new());
-        }
 
         let entries =
             fs::read_dir(&antigravity_dir).map_err(|e| format!("读取备份目录失败: {}", e))?;
@@ -38,29 +115,46 @@ pub async fn get_all(config_dir: &std::path::Path) -> Result<Vec<Value>, String>
                 let backup_data: Value = from_str(&content)
                     .map_err(|e| format!("解析 JSON 失败 {}: {}", file_name, e))?;
 
-                let jetski_state = backup_data
-                    .get("jetskiStateSync.agentManagerInitState")
+                let auth_status_raw = backup_data
+                    .get(crate::constants::database::AUTH_STATUS)
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        format!(
-                            "备份文件 {} 缺少 jetskiStateSync.agentManagerInitState",
-                            file_name
-                        )
-                    })?;
+                    .ok_or_else(|| format!("备份文件 {} 缺少 antigravityAuthStatus", file_name))?;
+                let auth_status: Value = serde_json::from_str(auth_status_raw)
+                    .map_err(|e| format!("解析 antigravityAuthStatus 失败 {}: {}", file_name, e))?;
 
-                let decoded = crate::antigravity::account::decode_jetski_state_proto(jetski_state)?;
+                let oauth_token = backup_data
+                    .get(crate::constants::database::OAUTH_TOKEN)
+                    .and_then(|v| v.as_str())
+                    .map(decode_oauth_token)
+                    .transpose()
+                    .map_err(|e| format!("解码 oauthToken 失败 {}: {}", file_name, e))?;
+
+                let user_status = backup_data
+                    .get(crate::constants::database::USER_STATUS)
+                    .and_then(|v| v.as_str())
+                    .map(decode_user_status)
+                    .transpose()
+                    .map_err(|e| format!("解码 userStatus 失败 {}: {}", file_name, e))?;
 
                 let modified_time = fs::metadata(&path)
                     .and_then(|m| m.modified())
                     .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
 
-                accounts.push((modified_time, decoded));
+                accounts.push((
+                    modified_time,
+                    AntigravityAccountResponse {
+                        antigravityAuthStatus: auth_status,
+                        oauthToken: oauth_token,
+                        userStatus: user_status,
+                    },
+                ));
             }
         }
 
         accounts.sort_by(|a, b| b.0.cmp(&a.0));
-        let decoded_only: Vec<Value> = accounts.into_iter().map(|(_, decoded)| decoded).collect();
-        Ok(decoded_only)
+        let result_list: Vec<AntigravityAccountResponse> =
+            accounts.into_iter().map(|(_, account)| account).collect();
+        Ok(result_list)
     }
     .await;
 
@@ -82,53 +176,36 @@ pub async fn get_all(config_dir: &std::path::Path) -> Result<Vec<Value>, String>
 }
 
 /// 获取当前 Antigravity 账户信息
-pub async fn get_current() -> Result<Value, String> {
+pub async fn get_current() -> Result<AntigravityAccountResponse, String> {
     tracing::info!("开始获取当前 Antigravity 信息");
 
     let start_time = std::time::Instant::now();
 
     let result = async {
-        // 尝试获取 Antigravity 状态数据库路径
-        let app_data = match crate::platform::get_antigravity_db_path() {
-            Some(path) => path,
-            None => {
-                // 如果主路径不存在，尝试其他可能的位置
-                let possible_paths = crate::platform::get_all_antigravity_db_paths();
-                if possible_paths.is_empty() {
-                    return Err("未找到Antigravity安装位置".to_string());
-                }
-                possible_paths[0].clone()
-            }
-        };
-
-        if !app_data.exists() {
-            return Err(format!(
-                "Antigravity 状态数据库文件不存在: {}",
-                app_data.display()
-            ));
-        }
+        let app_data = crate::platform::get_antigravity_db_path().unwrap();
 
         // 连接到 SQLite 数据库并获取认证信息
         let conn = Connection::open(&app_data)
             .map_err(|e| format!("连接数据库失败 ({}): {}", app_data.display(), e))?;
 
-        // jetski 状态（可选）
-        let jetski_state: Option<String> = conn
-            .query_row(
-                "SELECT value FROM ItemTable WHERE key = 'jetskiStateSync.agentManagerInitState'",
-                [],
-                |row| row.get(0),
-            )
-            .optional()
-            .map_err(|e| format!("查询 jetskiStateSync.agentManagerInitState 失败: {}", e))?;
+        let auth_status = query_item_value(&conn, crate::constants::database::AUTH_STATUS)?
+            .ok_or_else(|| "未找到 antigravityAuthStatus".to_string())?;
+        let auth_status_json: Value = serde_json::from_str(&auth_status)
+            .map_err(|e| format!("解析 antigravityAuthStatus 失败: {}", e))?;
+        let oauth_token = query_item_value(&conn, crate::constants::database::OAUTH_TOKEN)?
+            .map(|raw| decode_oauth_token(&raw))
+            .transpose()
+            .map_err(|e| format!("解码 oauthToken 失败: {}", e))?;
+        let user_status = query_item_value(&conn, crate::constants::database::USER_STATUS)?
+            .map(|raw| decode_user_status(&raw))
+            .transpose()
+            .map_err(|e| format!("解码 userStatus 失败: {}", e))?;
 
-        let state_str = jetski_state
-            .ok_or_else(|| "未找到 jetskiStateSync.agentManagerInitState".to_string())?;
-
-        // 解码 jetski 状态（base64 + proto）；失败直接报错
-        let decoded = decode_jetski_state_proto(&state_str)?;
-
-        Ok(serde_json::json!(decoded))
+        Ok(AntigravityAccountResponse {
+            antigravityAuthStatus: auth_status_json,
+            oauthToken: oauth_token,
+            userStatus: user_status,
+        })
     }
     .await;
 
@@ -155,91 +232,46 @@ pub async fn get_current() -> Result<Value, String> {
 
 /// 备份当前 Antigravity 账户
 pub async fn backup_current() -> Result<String, String> {
-    tracing::info!("📥 开始保存 jetskiStateSync.agentManagerInitState");
+    tracing::info!("📥 开始保存 antigravityAuthStatus");
 
     let start_time = std::time::Instant::now();
 
     let result = async {
-        // 尝试获取 Antigravity 状态数据库路径
-        let app_data = match crate::platform::get_antigravity_db_path() {
-            Some(path) => path,
-            None => {
-                // 如果主路径不存在，尝试其他可能的位置
-                let possible_paths = crate::platform::get_all_antigravity_db_paths();
-                if possible_paths.is_empty() {
-                    return Err("未找到Antigravity安装位置".to_string());
-                }
-                possible_paths[0].clone()
-            }
-        };
-
-        if !app_data.exists() {
-            return Err(format!(
-                "Antigravity 状态数据库文件不存在: {}",
-                app_data.display()
-            ));
-        }
+        let app_data = crate::platform::get_antigravity_db_path().unwrap();
 
         // 连接到 SQLite 数据库并获取认证信息
         let conn = Connection::open(&app_data)
             .map_err(|e| format!("连接数据库失败 ({}): {}", app_data.display(), e))?;
 
-        // jetski 状态（必需）
-        let jetski_state: String = conn
-            .query_row(
-                "SELECT value FROM ItemTable WHERE key = 'jetskiStateSync.agentManagerInitState'",
-                [],
-                |row| row.get(0),
-            )
-            .optional()
-            .map_err(|e| format!("查询 jetskiStateSync.agentManagerInitState 失败: {}", e))?
-            .ok_or_else(|| "未找到 jetskiStateSync.agentManagerInitState".to_string())?;
+        let auth_status = query_item_value(&conn, crate::constants::database::AUTH_STATUS)?
+            .ok_or_else(|| "未找到 antigravityAuthStatus".to_string())?;
+        let auth_status_json: Value = serde_json::from_str(&auth_status)
+            .map_err(|e| format!("解析 antigravityAuthStatus 失败: {}", e))?;
+        let account_file_name = auth_status_json["email"].as_str().unwrap().trim();
 
-        // 认证状态 (可选)
-        let auth_status: Option<String> = conn
-            .query_row(
-                "SELECT value FROM ItemTable WHERE key = 'antigravityAuthStatus'",
-                [],
-                |row| row.get(0),
-            )
-            .optional()
-            .unwrap_or(None);
+        let oauth_token = query_item_value(&conn, crate::constants::database::OAUTH_TOKEN)?;
+        let user_status = query_item_value(&conn, crate::constants::database::USER_STATUS)?;
 
-        // 从 jetski proto 解码邮箱（仅用于文件名）
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(jetski_state.trim())
-            .map_err(|e| format!("jetskiStateSync Base64 解码失败: {}", e))?;
-        let msg = crate::proto::SessionResponse::decode(bytes.as_slice())
-            .map_err(|e| format!("jetskiStateSync Protobuf 解码失败: {}", e))?;
-
-        let email = msg
-            .context
-            .as_ref()
-            .and_then(|c| {
-                if c.email.is_empty() {
-                    None
-                } else {
-                    Some(c.email.as_str())
-                }
-            })
-            .ok_or_else(|| "jetskiStateSync 中未找到邮箱字段，无法确定备份文件名".to_string())?;
-
-        // 直接保存原始字符串，不解码，文件名与原逻辑保持：{email}.json
+        // 直接保存原始字符串，不解码
         let accounts_dir = crate::directories::get_accounts_directory();
-        if let Err(e) = std::fs::create_dir_all(&accounts_dir) {
-            return Err(format!("创建账户目录失败: {}", e));
-        }
 
-        let account_file = accounts_dir.join(format!("{email}.json"));
+        let account_file = accounts_dir.join(format!("{account_file_name}.json"));
         let mut content_map = serde_json::Map::new();
         content_map.insert(
-            "jetskiStateSync.agentManagerInitState".to_string(),
-            serde_json::Value::String(jetski_state),
+            crate::constants::database::AUTH_STATUS.to_string(),
+            serde_json::Value::String(auth_status),
         );
 
-        if let Some(status) = auth_status {
-             content_map.insert(
-                "antigravityAuthStatus".to_string(),
+        if let Some(token) = oauth_token {
+            content_map.insert(
+                crate::constants::database::OAUTH_TOKEN.to_string(),
+                serde_json::Value::String(token),
+            );
+        }
+
+        if let Some(status) = user_status {
+            content_map.insert(
+                crate::constants::database::USER_STATUS.to_string(),
                 serde_json::Value::String(status),
             );
         }
@@ -249,13 +281,10 @@ pub async fn backup_current() -> Result<String, String> {
             &account_file,
             serde_json::to_string_pretty(&content).unwrap(),
         )
-        .map_err(|e| format!("写入 jetski 状态失败: {}", e))?;
+        .map_err(|e| format!("写入 antigravityAuthStatus 失败: {}", e))?;
 
-        let message = format!(
-            "已保存 jetskiStateSync.agentManagerInitState 到 {}",
-            account_file.display()
-        );
-        tracing::info!(file = %account_file.display(), "✅ 保存 jetski 状态完成");
+        let message = format!("已保存 antigravityAuthStatus 到 {}", account_file.display());
+        tracing::info!(file = %account_file.display(), "✅ 保存认证状态完成");
         Ok(message)
     }
     .await;
@@ -306,104 +335,102 @@ pub async fn restore(account_name: String) -> Result<String, String> {
 /// 2. 无扩展 + Antigravity 运行中 → 提示安装扩展
 /// 3. 无扩展 + Antigravity 未运行 → 恢复数据 + 启动进程
 pub async fn switch(account_name: String) -> Result<String, String> {
-        // 检查条件
-        let has_extension = crate::server::websocket::has_extension_connections();
-        let is_running = crate::platform::is_antigravity_running();
+    // 检查条件
+    let has_extension = crate::server::websocket::has_extension_connections();
+    let is_running = crate::platform::is_antigravity_running();
 
-        tracing::info!(
-            target: "account::switch",
-            has_extension = has_extension,
-            is_running = is_running,
-            "账户切换条件检查"
-        );
+    tracing::info!(
+        target: "account::switch",
+        has_extension = has_extension,
+        is_running = is_running,
+        "账户切换条件检查"
+    );
 
-        match (has_extension, is_running) {
-            // 场景 1: 有扩展连接 → 恢复数据 + reloadWindow
-            (true, _) => {
-                let client_count = crate::server::websocket::extension_client_count();
-                tracing::info!(target: "account::switch::scenario1", client_count = client_count, "使用扩展模式切换");
+    match (has_extension, is_running) {
+        // 场景 1: 有扩展连接 → 恢复数据 + reloadWindow
+        (true, _) if false => {
+            let client_count = crate::server::websocket::extension_client_count();
+            tracing::info!(target: "account::switch::scenario1", client_count = client_count, "使用扩展模式切换");
 
-                // 1. 清除原来的数据库
-                clear_all_data().await?;
-                tracing::debug!(target: "account::switch::step1", "Antigravity 数据库清除完成");
+            // 1. 清除原来的数据库
+            clear_all_data().await?;
+            tracing::debug!(target: "account::switch::step1", "Antigravity 数据库清除完成");
 
-                // 2. 恢复指定账户到 Antigravity 数据库
-                restore(account_name.clone()).await?;
-                tracing::debug!(target: "account::switch::step2", "账户数据恢复完成");
+            // 2. 恢复指定账户到 Antigravity 数据库
+            restore(account_name.clone()).await?;
+            tracing::debug!(target: "account::switch::step2", "账户数据恢复完成");
 
-                // 3. 等待数据库操作完成
-                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            // 3. 等待数据库操作完成
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
 
-                // 4. 调用所有扩展的 reloadWindow 方法（广播）
-                crate::server::websocket::call_all_extensions(
-                    "reloadWindow",
-                    serde_json::json!({}),
-                );
-                tracing::info!(target: "account::switch::step3", client_count = client_count, "已广播 reloadWindow 到所有扩展");
+            // 4. 调用所有扩展的 reloadWindow 方法（广播）
+            crate::server::websocket::call_all_extensions("reloadWindow", serde_json::json!({}));
+            tracing::info!(target: "account::switch::step3", client_count = client_count, "已广播 reloadWindow 到所有扩展");
 
-                Ok(format!(
-                    "账户已切换到 {}，正在重载 {} 个 VSCode 窗口",
-                    account_name, client_count
-                ))
-            }
+            Ok(format!(
+                "账户已切换到 {}，正在重载 {} 个 VSCode 窗口",
+                account_name, client_count
+            ))
+        }
 
-            // 场景 2: 无扩展 + Antigravity 运行中 → 提示安装扩展
-            (false, true) => {
-                tracing::warn!(target: "account::switch::scenario2", "Antigravity 正在运行但无扩展连接");
-                Err("Antigravity 正在运行中，需要安装 VSCode 扩展才能切换账户。\n\n请安装 Antigravity Agent 扩展，扩展会自动重载 Antigravity 窗口。".to_string())
-            }
+        // 场景 2: 无扩展 + Antigravity 运行中 → 提示安装扩展
+        (false, true) if false => {
+            tracing::warn!(target: "account::switch::scenario2", "Antigravity 正在运行但无扩展连接");
+            Err("Antigravity 正在运行中，需要安装 VSCode 扩展才能切换账户。\n\n请安装 Antigravity Agent 扩展，扩展会自动重载 Antigravity 窗口。".to_string())
+        }
 
-            // 场景 3: 无扩展 + Antigravity 未运行 → 恢复数据 + 启动进程
-            (false, false) => {
-                // 0. 关闭 Antigravity 进程 (如果存在)
-                match crate::platform::kill_antigravity_processes() {
-                    Ok(result) => {
-                        if result.contains("not found") || result.contains("未找到") {
-                            tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
-                            "Antigravity 进程未运行".to_string()
-                        } else {
-                            tracing::debug!(target: "account::switch::step1", result = %result, "进程关闭完成");
-                            result
-                        }
-                    }
-                    Err(e) => {
-                        if e.contains("not found") || e.contains("未找到") {
-                            tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
-                            "Antigravity 进程未运行".to_string()
-                        } else {
-                            tracing::error!(target: "account::switch::step1", error = %e, "关闭进程时发生错误");
-                            return Err(format!("关闭进程时发生错误: {}", e));
-                        }
-                    }
-                };
-
-                // 等待一秒确保进程完全关闭
-                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-
-                tracing::info!(target: "account::switch::scenario3", "Antigravity 未运行，使用进程启动模式");
-
-                // 1. 清除原来的数据库
-                clear_all_data().await?;
-                tracing::debug!(target: "account::switch::step1", "Antigravity 数据库清除完成");
-
-                // 2. 恢复指定账户到 Antigravity 数据库
-                restore(account_name.clone()).await?;
-                tracing::debug!(target: "account::switch::step2", "账户数据恢复完成");
-
-                // 3. 等待数据库操作完成
-                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-
-                // 4. 启动 Antigravity 进程
-                match crate::antigravity::starter::start_antigravity() {
-                    Ok(result) => {
-                        tracing::info!(target: "account::switch::step3", result = %result, "Antigravity 启动成功");
-                        Ok(format!("账户已切换到 {}，已启动 Antigravity", account_name))
-                    }
-                    Err(e) => {
-                        tracing::error!(target: "account::switch::step3", error = %e, "Antigravity 启动失败");
-                        Err(format!("账户数据已恢复，但启动 Antigravity 失败: {}", e))
+        // 场景 3: 无扩展 + Antigravity 未运行 → 恢复数据 + 启动进程
+        // (false, false) => {
+        _ => {
+            // 0. 关闭 Antigravity 进程 (如果存在)
+            match crate::platform::kill_antigravity_processes() {
+                Ok(result) => {
+                    if result.contains("not found") || result.contains("未找到") {
+                        tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
+                        "Antigravity 进程未运行".to_string()
+                    } else {
+                        tracing::debug!(target: "account::switch::step1", result = %result, "进程关闭完成");
+                        result
                     }
                 }
+                Err(e) => {
+                    if e.contains("not found") || e.contains("未找到") {
+                        tracing::debug!(target: "account::switch::step1", "Antigravity 进程未运行，跳过关闭步骤");
+                        "Antigravity 进程未运行".to_string()
+                    } else {
+                        tracing::error!(target: "account::switch::step1", error = %e, "关闭进程时发生错误");
+                        return Err(format!("关闭进程时发生错误: {}", e));
+                    }
+                }
+            };
+
+            // 等待一秒确保进程完全关闭
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+
+            tracing::info!(target: "account::switch::scenario3", "Antigravity 未运行，使用进程启动模式");
+
+            // 1. 清除原来的数据库
+            clear_all_data().await?;
+            tracing::debug!(target: "account::switch::step1", "Antigravity 数据库清除完成");
+
+            // 2. 恢复指定账户到 Antigravity 数据库
+            restore(account_name.clone()).await?;
+            tracing::debug!(target: "account::switch::step2", "账户数据恢复完成");
+
+            // 3. 等待数据库操作完成
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+
+            // 4. 启动 Antigravity 进程
+            match crate::antigravity::starter::start_antigravity() {
+                Ok(result) => {
+                    tracing::info!(target: "account::switch::step3", result = %result, "Antigravity 启动成功");
+                    Ok(format!("账户已切换到 {}，已启动 Antigravity", account_name))
+                }
+                Err(e) => {
+                    tracing::error!(target: "account::switch::step3", error = %e, "Antigravity 启动失败");
+                    Err(format!("账户数据已恢复，但启动 Antigravity 失败: {}", e))
+                }
+            }
         }
     }
 }
@@ -416,15 +443,15 @@ pub async fn sign_in_new() -> Result<String, String> {
     let kill_result = match crate::platform::kill_antigravity_processes() {
         Ok(result) => result,
         Err(e) => {
-             // 忽略未找到进程的错误
-             if e.contains("not found") || e.contains("未找到") {
-                 "Antigravity 进程未运行".to_string()
-             } else {
-                 return Err(format!("关闭进程时发生错误: {}", e));
-             }
+            // 忽略未找到进程的错误
+            if e.contains("not found") || e.contains("未找到") {
+                "Antigravity 进程未运行".to_string()
+            } else {
+                return Err(format!("关闭进程时发生错误: {}", e));
+            }
         }
     };
-    
+
     // 短暂等待
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
@@ -448,7 +475,10 @@ pub async fn sign_in_new() -> Result<String, String> {
         Err(e) => format!("启动失败: {}", e),
     };
 
-    Ok(format!("{} -> 备份: {:?} -> 重启: {}", kill_result, backup_msg, start_msg))
+    Ok(format!(
+        "{} -> 备份: {:?} -> 重启: {}",
+        kill_result, backup_msg, start_msg
+    ))
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -482,16 +512,18 @@ pub async fn get_metrics(
     email: String,
 ) -> Result<AccountMetrics, String> {
     use crate::services::google_api;
-    
+
     // 1. Load Account & Token
-    let (email, proto_bytes) = google_api::load_account(config_dir, &email).await?;
-    let token_info = google_api::get_valid_token(&email, &proto_bytes).await?;
+    let (email, access_token) = google_api::load_account(config_dir, &email).await?;
+    let token_info = google_api::get_valid_token(&email, &access_token).await?;
 
     // 2. Fetch Models
-    let project = google_api::fetch_code_assist_project(&token_info.access_token).await
+    let project = google_api::fetch_code_assist_project(&token_info.access_token)
+        .await
         .map_err(|e| format!("获取项目 ID 失败: {}", e))?;
 
-    let models_json = google_api::fetch_available_models(&token_info.access_token, &project).await
+    let models_json = google_api::fetch_available_models(&token_info.access_token, &project)
+        .await
         .map_err(|e| format!("获取模型列表失败: {}", e))?;
 
     // 3. Parse Quotas
@@ -510,13 +542,13 @@ pub async fn trigger_quota_refresh(
     email: String,
 ) -> Result<TriggerResult, String> {
     use crate::services::google_api;
-    use tracing::{info, error};
+    use tracing::{error, info};
 
     info!("🚀 Check Quota & Trigger Refresh for: {}", email);
 
     // 1. Load Account & Token
-    let (email_str, proto_bytes) = google_api::load_account(config_dir, &email).await?;
-    let token_info = match google_api::get_valid_token(&email, &proto_bytes).await {
+    let (email_str, access_token) = google_api::load_account(config_dir, &email).await?;
+    let token_info = match google_api::get_valid_token(&email_str, &access_token).await {
         Ok(t) => t,
         Err(e) => return Err(format!("Auth failed: {}", e)),
     };
@@ -538,7 +570,8 @@ pub async fn trigger_quota_refresh(
     };
 
     // 3. Get Available Models & Quotas
-    let models_json = google_api::fetch_available_models(&token_info.access_token, &project).await?;
+    let models_json =
+        google_api::fetch_available_models(&token_info.access_token, &project).await?;
     let quotas = parse_quotas(&models_json);
 
     let mut triggered = Vec::new();
@@ -569,8 +602,12 @@ pub async fn trigger_quota_refresh(
                 }
             }
         } else {
-             skipped.push(item.model_name.clone());
-             skipped_details.push(format!("{} ({:.4}%)", item.model_name, item.percentage * 100.0));
+            skipped.push(item.model_name.clone());
+            skipped_details.push(format!(
+                "{} ({:.4}%)",
+                item.model_name,
+                item.percentage * 100.0
+            ));
         }
     }
 
@@ -628,13 +665,16 @@ async fn trigger_minimal_query(
     model_key: &str,
 ) -> Result<(), String> {
     use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
-    
+
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/v1internal:generateContent", crate::services::google_api::CLOUD_CODE_BASE_URL);
+    let url = format!(
+        "{}/v1internal:generateContent",
+        crate::services::google_api::CLOUD_CODE_BASE_URL
+    );
 
     let body = serde_json::json!({
         "project": project,

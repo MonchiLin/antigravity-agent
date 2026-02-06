@@ -1,62 +1,97 @@
 
-// Antigravity 当前用户信息类型
+// Antigravity 账户响应结构
 export interface AntigravityAccount {
-  auth: Auth
-  context: Context
-  field_5_base64: string | null
-  field_7_base64: string | null
-  field_9_base64: string | null
-  field_10_base64: string | null
-  field_11_base64: string | null
-  field_15_base64: string | null
-  field_16_base64: string | null
-  field_17_base64: string | null
-  f18_base64: string | null
-  subscription: Subscription | null
+  antigravityAuthStatus: AntigravityAuthStatus
+  oauthToken: OAuthTokenDecoded | null
+  userStatus: UserStatusDecoded | null
 }
 
-interface Auth {
-  access_token: string
-  token_type: string       // 原 type
-  refresh_token: string    // 原 id_token
-  created_at: number | null  // 原 meta.expiry_timestamp
+export interface OAuthTokenDecoded {
+  sentinelKey: string
+  accessToken: string
+  refreshToken: string
+  tokenType: string
+  expirySeconds: number | null
 }
 
-interface Context {
-  email: string
-  models: Models | null
-  plan: Subscription | null  // 使用 Subscription 类型
-  plan_name: string
+export type UserStatusDecoded = UserStatusProtoDecoded
+
+export interface UserStatusProtoDecoded {
+  sentinelKey: string
+  rawDataType: 'proto'
+  rawData: UserStatusProtoRawData
+}
+
+export interface UserStatusProtoRawData {
   status: number
+  plan_name: string
+  email: string
+  models: UserStatusModels | null
+  plan: UserStatusPlan | null
 }
 
-interface Models {
-  items: Item[]
-  recommended: Recommended | null
-  default_model: number | null
+export interface UserStatusModels {
+  items: UserStatusModelItem[]
+  recommended: UserStatusRecommended | null
+  default_model: UserStatusDefaultModel | null
 }
 
-interface Item {
+export interface UserStatusModelItem {
   name: string
-  id: number | null
+  id: UserStatusModelId | null
   field_5: number
   field_11: number
+  meta: UserStatusModelMeta | null
   tag: string
-  supported_types: string[]
+  supported_types: UserStatusSupportedType[]
 }
 
-interface Recommended {
+export interface UserStatusModelMeta {
+  rate_limit: number
+  timestamp: UserStatusMetaTimestamp | null
+}
+
+export interface UserStatusMetaTimestamp {
+  value: number
+}
+
+export interface UserStatusSupportedType {
+  mime_type: string
+  enabled: number
+}
+
+export interface UserStatusRecommended {
   category: string
-  model_names: string[] | null
+  list: UserStatusRecommendedList | null
 }
 
-// 订阅信息
-interface Subscription {
+export interface UserStatusRecommendedList {
+  model_names: string[]
+}
+
+export interface UserStatusDefaultModel {
+  model: UserStatusModelId | null
+}
+
+export interface UserStatusModelId {
+  id: number
+}
+
+export interface UserStatusPlan {
   tier_id: string
   tier_name: string
   display_name: string
   upgrade_url: string
   upgrade_message: string
+}
+
+// 原 Antigravity 账户信息（现作为内部字段）
+// 根据实际 API 返回调整：不再包含 auth/context 嵌套结构，而是直接包含 info
+export interface AntigravityAuthStatus {
+  apiKey: string
+  email: string
+  name: string
+  userStatusProtoBinaryBase64?: string
 }
 
 // 对应 Rust 的 AccountMetrics 结构

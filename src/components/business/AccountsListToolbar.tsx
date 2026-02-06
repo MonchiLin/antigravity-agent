@@ -110,27 +110,29 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
 
       const batches = chunk(accounts, 3);
 
+
       for (const batch of batches) {
         const promises = batch.map(acc => {
-          console.log("REFRESH: Triggering for", acc.context.email);
-          toast(t('toolbar.refreshingQuota') + ' ' + acc.context.email, { id: 'refresh-' + acc.context.email });
+          const email = acc.antigravityAuthStatus.email;
+          console.log("REFRESH: Triggering for", email);
+          toast(t('toolbar.refreshingQuota') + ' ' + email, { id: 'refresh-' + email });
 
-          return AccountTriggerCommands.triggerQuotaRefresh(acc.context.email)
+          return AccountTriggerCommands.triggerQuotaRefresh(email)
             .then(res => {
-              console.log("REFRESH: Result for", acc.context.email, res);
+              console.log("REFRESH: Result for", email, res);
               if (res.triggered_models.length > 0) {
-                toast.success(`Done ${acc.context.email}: ${res.triggered_models.length} triggered`, { duration: 3000 });
+                toast.success(`Done ${email}: ${res.triggered_models.length} triggered`, { duration: 3000 });
               }
 
               if (res.failed_models && res.failed_models.length > 0) {
-                toast.error(`Errors ${acc.context.email}: ${res.failed_models.join(", ")}`, { duration: 5000 });
+                toast.error(`Errors ${email}: ${res.failed_models.join(", ")}`, { duration: 5000 });
               }
 
               if (res.triggered_models.length === 0 && (!res.failed_models || res.failed_models.length === 0)) {
                 const reasons = res.skipped_details && res.skipped_details.length > 0
                   ? res.skipped_details.join(", ")
                   : "Unknown";
-                toast(`Skipped ${acc.context.email}: ${reasons}`, { icon: 'ℹ️', duration: 5000 });
+                toast(`Skipped ${email}: ${reasons}`, { icon: 'ℹ️', duration: 5000 });
               }
 
               if (res.triggered_models.length > 0) {
@@ -140,10 +142,10 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
               return res;
             })
             .catch(e => {
-              console.error("Refresh failed for", acc.context.email, e);
+              console.error("Refresh failed for", email, e);
               // Fallback to alert if toast fails
-              // alert(`Refreh Error for ${acc.context.email}: ${e}`);
-              toast.error(`Fail ${acc.context.email}: ${e}`, { duration: 3000 });
+              // alert(`Refreh Error for ${email}: ${e}`);
+              toast.error(`Fail ${email}: ${e}`, { duration: 3000 });
               return null;
             })
         });

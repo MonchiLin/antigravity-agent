@@ -52,10 +52,11 @@ export function useTrayMenu() {
     };
   }, [switchToAccount, t]);
 
+
   // 当账户列表或语言变化时更新托盘菜单
   useEffect(() => {
     // 提取邮箱列表并更新托盘菜单
-    const emails = accounts.map((user) => user.context.email);
+    const emails = accounts.map((user) => user.antigravityAuthStatus.email);
     updateTrayMenu(emails);
   }, [accounts.length, updateTrayMenu, i18n.language]);
 }

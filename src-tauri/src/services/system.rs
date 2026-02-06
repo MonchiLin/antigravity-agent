@@ -1,5 +1,5 @@
-use tauri::{AppHandle, Manager};
 use std::sync::Arc;
+use tauri::{AppHandle, Manager};
 
 pub mod tray {
     use super::*;
@@ -38,10 +38,7 @@ pub mod db_monitor {
 
     pub async fn start(app: &AppHandle) -> Result<String, String> {
         let monitor = app.state::<Arc<DatabaseMonitor>>();
-        monitor
-            .start_monitoring()
-            .await
-            .map_err(|e| format!("启动监控失败: {}", e))?;
+        monitor.start_monitoring().await;
         Ok("数据库监控已启动".to_string())
     }
 
@@ -55,7 +52,7 @@ pub mod db_monitor {
 pub mod logging {
     use std::fs;
     use std::path::Path;
-    
+
     pub async fn write_text_file(path: String, content: String) -> Result<String, String> {
         let file_path = Path::new(&path);
 
@@ -267,7 +264,9 @@ pub mod extension {
         } else {
             match crate::antigravity::starter::detect_antigravity_executable() {
                 Some(p) => p,
-                None => return Err("无法定位 Antigravity 可执行文件，请确保已安装编辑器".to_string()),
+                None => {
+                    return Err("无法定位 Antigravity 可执行文件，请确保已安装编辑器".to_string())
+                }
             }
         };
 

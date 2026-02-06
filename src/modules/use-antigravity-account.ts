@@ -56,8 +56,9 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
       // 1. 获取当前 Antigravity 用户信息
       const currentInfo = await AccountCommands.getCurrentAntigravityAccount();
       console.log("insertOrUpdateCurrentAccount", currentInfo)
+
       // 2. 检查是否有有效的用户信息（通过API Key或用户状态判断）
-      if (currentInfo?.auth.access_token) {
+      if (currentInfo?.antigravityAuthStatus.apiKey) {
         // 3. 执行保存操作
         await AccountCommands.saveAntigravityCurrentAccount();
 
@@ -126,4 +127,4 @@ export const useAntigravityAccount = create<AntigravityAccountState & Antigravit
   }
 }));
 
-export const useCurrentAntigravityAccount: () => AntigravityAccount | undefined = () => useAntigravityAccount(state => state.accounts.find(user => user.context.email === state.currentAuthInfo?.context.email));
+export const useCurrentAntigravityAccount: () => AntigravityAccount | undefined = () => useAntigravityAccount(state => state.accounts.find(user => user.antigravityAuthStatus.email === state.currentAuthInfo?.antigravityAuthStatus.email));

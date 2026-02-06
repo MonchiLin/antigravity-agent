@@ -12,7 +12,7 @@ use crate::platform;
 
 /// 恢复 Antigravity 状态（精简版）
 ///
-/// 从账户文件恢复 jetskiStateSync.agentManagerInitState，并删除 antigravityAuthStatus
+/// 从账户文件恢复 antigravityAuthStatus / oauthToken / userStatus
 ///
 /// # 参数
 /// - `account_file_path`: 账户 JSON 文件的完整路径
@@ -23,27 +23,10 @@ use crate::platform;
 pub async fn save_antigravity_account_to_file(
     account_file_path: PathBuf,
 ) -> Result<String, String> {
-    println!("📂 账户文件: {}", account_file_path.display());
-
-    if !account_file_path.exists() {
-        return Err(format!("账户文件不存在: {}", account_file_path.display()));
-    }
-
     let content = fs::read_to_string(&account_file_path).map_err(|e| e.to_string())?;
     let account_data: Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
-    println!("✅ 账户文件读取成功");
-
-    let app_data = match platform::get_antigravity_db_path() {
-        Some(p) => p,
-        None => {
-            let possible_paths = platform::get_all_antigravity_db_paths();
-            if possible_paths.is_empty() {
-                return Err("未找到 Antigravity 安装位置".to_string());
-            }
-            possible_paths[0].clone()
-        }
-    };
+    let app_data = platform::get_antigravity_db_path().unwrap();
 
     // 确保数据库目录存在
     if let Some(parent) = app_data.parent() {
@@ -52,33 +35,12 @@ pub async fn save_antigravity_account_to_file(
 
     let mut msg = String::new();
 
-    // 内联恢复逻辑：仅写回 AGENT_STATE 并删除 AUTH_STATUS
+    // 内联恢复逻辑：写回 AUTH_STATUS / OAUTH_TOKEN / USER_STATUS
     let restore_db = |db_path: &PathBuf, db_name: &str| -> Result<usize, String> {
-        tracing::info!(target: "restore::database", db_name = %db_name, "开始恢复数据库（仅 jetskiStateSync.agentManagerInitState，移除 antigravityAuthStatus）");
+        tracing::info!(target: "restore::database", db_name = %db_name, "开始恢复数据库");
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut restored_count = 0;
-
-        if let Some(val) = account_data.get(database::AGENT_STATE) {
-            if let Some(val_str) = val.as_str() {
-                match conn.execute(
-                    "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
-                    params![database::AGENT_STATE, val_str],
-                ) {
-                    Ok(_) => {
-                        tracing::debug!(target: "restore::database", key = %database::AGENT_STATE, "注入数据成功");
-                        restored_count += 1;
-                    }
-                    Err(e) => {
-                        tracing::error!(target: "restore::database", key = %database::AGENT_STATE, error = %e, "写入数据失败");
-                    }
-                }
-            } else {
-                tracing::warn!(target: "restore::database", key = %database::AGENT_STATE, "字段不是字符串类型，跳过");
-            }
-        } else {
-            tracing::debug!(target: "restore::database", key = %database::AGENT_STATE, "备份中未找到字段，跳过");
-        }
 
         if let Some(val) = account_data.get(database::AUTH_STATUS) {
             if let Some(val_str) = val.as_str() {
@@ -96,13 +58,49 @@ pub async fn save_antigravity_account_to_file(
                 }
             }
         } else {
-             if let Err(e) = conn.execute(
+            if let Err(e) = conn.execute(
                 "DELETE FROM ItemTable WHERE key = ?",
                 [database::AUTH_STATUS],
             ) {
                 tracing::warn!(target: "restore::database", error = %e, "删除 antigravityAuthStatus 失败（忽略）");
             } else {
                 tracing::debug!(target: "restore::database", "旧备份无认证状态，已清理旧数据");
+            }
+        }
+
+        // [NEW] 恢复 OAuth Token
+        if let Some(val) = account_data.get(database::OAUTH_TOKEN) {
+            if let Some(val_str) = val.as_str() {
+                match conn.execute(
+                    "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
+                    params![database::OAUTH_TOKEN, val_str],
+                ) {
+                    Ok(_) => {
+                        tracing::debug!(target: "restore::database", key = %database::OAUTH_TOKEN, "注入 OAuth Token成功");
+                        restored_count += 1;
+                    }
+                    Err(e) => {
+                        tracing::error!(target: "restore::database", key = %database::OAUTH_TOKEN, error = %e, "写入 OAuth Token 失败");
+                    }
+                }
+            }
+        }
+
+        // [NEW] 恢复 User Status
+        if let Some(val) = account_data.get(database::USER_STATUS) {
+            if let Some(val_str) = val.as_str() {
+                match conn.execute(
+                    "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
+                    params![database::USER_STATUS, val_str],
+                ) {
+                    Ok(_) => {
+                        tracing::debug!(target: "restore::database", key = %database::USER_STATUS, "注入 User Status 成功");
+                        restored_count += 1;
+                    }
+                    Err(e) => {
+                        tracing::error!(target: "restore::database", key = %database::USER_STATUS, error = %e, "写入 User Status 失败");
+                    }
+                }
             }
         }
 

@@ -1,7 +1,8 @@
 {
   "actions": {
     "delete": "删除",
-    "use": "使用"
+    "use": "使用",
+    "start": "启动"
   },
   "tooltip": {
     "currentSession": "当前会话"
@@ -11,6 +12,10 @@
       "title": "当您看到这个符号说明开发者内置的数据未能覆盖当前账户层级",
       "description": "这不是您的问题, 为了解决这个问题, 您可以将该提示截图",
       "reportLink": "提供给开发者"
+    },
+    "notPersisted": {
+      "title": "该账户凭证未持久化",
+      "description": "由于 Antigravity (>=1.16.5) 仅在程序关闭时保存凭证，您需要先关闭一次 Antigravity 才能完成账户保存。"
     }
   },
   "accountDetail": {

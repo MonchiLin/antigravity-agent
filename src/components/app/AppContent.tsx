@@ -13,6 +13,8 @@ import { logger } from "@/lib/logger.ts";
 import { useTranslation } from 'react-i18next';
 import dayjs from "dayjs";
 import { useInstallExtension } from "@/hooks/use-install-extension.tsx";
+import { clearInterval, setInterval } from 'worker-timers';
+import {useAntigravityIsRunning} from "@/hooks/use-antigravity-is-running.ts";
 
 const tierRank: Record<UserTier, number> = {
   'g1-ultra-tier': 0,
@@ -36,9 +38,11 @@ export function AppContent() {
   const deleteAccount = useAntigravityAccount((state) => state.delete);
   const clearAllAccounts = useAntigravityAccount((state) => state.clearAllAccounts);
   const switchToAccount = useAntigravityAccount((state) => state.switchToAccount);
+  const insertOrUpdateCurrentAccount = useAntigravityAccount((state) => state.insertOrUpdateCurrentAccount);
   const accountAdditionData = useAccountAdditionData();
   const currentAntigravityAccount = useCurrentAntigravityAccount();
   const appGlobalLoader = useAppGlobalLoader();
+  const antigravityIsRunning = useAntigravityIsRunning()
   const [condition, setCondition] = useState<ListToolbarValue>({
     sortKey: 'tier',
     query: '',
@@ -77,7 +81,7 @@ export function AppContent() {
         } catch (e) {
           logger.error(t('notifications:fetchUserDataFailed'), {
             module: 'AppContent',
-            email: user.context.email,
+            email: user.antigravityAuthStatus.email,
             error: e instanceof Error ? e.message : String(e)
           })
         }
@@ -94,6 +98,14 @@ export function AppContent() {
       clearInterval(fetchAccountAdditionDataTimer.current)
     }
   }, [accounts.length, t]);
+
+  // 由于 Antigravity (>=1.16.5) 仅在程序关闭时保存凭证，您需要先关闭一次 Antigravity 才能完成账户保存。
+  // 所以这里判断下，发现程序关闭下就调用 insertOrUpdateCurrentAccount
+  useEffect(() => {
+    antigravityIsRunning.addStatusChangeListener(isRunning => {
+      insertOrUpdateCurrentAccount()
+    })
+  }, []);
 
   // 用户详情处理
   const handleUserClick = (account: AccountSessionListAccountItem) => {
@@ -132,33 +144,7 @@ export function AppContent() {
       await switchToAccount(user.email);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-
-      // 检查是否是需要安装扩展的错误 (后端返回的错误信息包含这些关键词)
-      if (errorMessage.includes("VSCode") || errorMessage.includes("安装")) {
-        Modal.warning({
-          title: '需要安装 VSCode 扩展',
-          width: 500,
-          centered: true,
-          content: (
-            <div className="flex flex-col gap-2 pt-2">
-              <p className="whitespace-pre-line text-gray-600">
-                {errorMessage}
-              </p>
-              <div className="mt-2 text-sm bg-gray-50 p-3 rounded border border-gray-100">
-                <p className="font-semibold mb-1">为什么需要扩展？</p>
-                <p className="text-gray-500">Antigravity 正在运行中，为了不丢失当前状态，我们通过 VSCode 扩展来优雅地重载窗口，而不是强制重启进程。</p>
-              </div>
-            </div>
-          ),
-          okText: '好的，我去安装',
-          onOk: () => {
-            // 触发安装扩展逻辑
-            install();
-          }
-        });
-      } else {
-        toast.error(t('account:switch.error', { error: errorMessage }));
-      }
+      toast.error(t('account:switch.error', { error: errorMessage }));
     } finally {
       appGlobalLoader.close();
     }
@@ -194,8 +180,9 @@ export function AppContent() {
     }
   };
 
+
   const accountsWithData: AccountSessionListAccountItem[] = accounts.map((account) => {
-    const accountAdditionDatum = accountAdditionData.data[account.context.email]
+    const accountAdditionDatum = accountAdditionData.data[account.antigravityAuthStatus.email]
 
     return {
       geminiProQuote: accountAdditionDatum?.geminiProQuote ?? -1,
@@ -206,12 +193,13 @@ export function AppContent() {
       geminiImageQuoteRestIn: accountAdditionDatum?.geminiImageQuoteRestIn,
       claudeQuote: accountAdditionDatum?.claudeQuote ?? -1,
       claudeQuoteRestIn: accountAdditionDatum?.claudeQuoteRestIn,
-      email: account.context.email,
-      nickName: account.context.plan_name,
+      email: account.antigravityAuthStatus.email,
+      nickName: account.antigravityAuthStatus.name,
       userAvatar: accountAdditionDatum?.userAvatar ?? "",
-      apiKey: account.auth.access_token,
-      // 似乎在某些情况下 plan 可能为 null，这里添加 null 检查
-      tier: (account.context.plan?.tier_id ?? '') as UserTier,
+      apiKey: account.antigravityAuthStatus.apiKey,
+      // 使用后端返回的真实 tier_id，如果获取失败或为 null 则回退到 'free-tier'
+      tier: (account.userStatus?.rawData?.plan?.tier_id || 'free-tier') as UserTier,
+      persisted: account.oauthToken !== null,
     }
   })
 
@@ -232,7 +220,7 @@ export function AppContent() {
     })
     .sort((a, b) => {
       // 当前账户始终置顶
-      const currentEmail = currentAntigravityAccount?.context.email;
+      const currentEmail = currentAntigravityAccount?.antigravityAuthStatus.email;
       if (a.email === currentEmail) return -1;
       if (b.email === currentEmail) return 1;
 
@@ -287,7 +275,7 @@ export function AppContent() {
           onSwitch={handleSwitchAccount}
           onDelete={handleDeleteBackup}
           onSelect={handleUserClick}
-          currentUserEmail={currentAntigravityAccount?.context.email}
+          currentUserEmail={currentAntigravityAccount?.antigravityAuthStatus.email}
         />
       </section>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { VSCodeButton, VSCodeTag } from '@vscode/webview-ui-toolkit/react';
 import { useTranslation } from 'react-i18next';
 import { QuotaItem } from './QuotaItem';
+import { AntigravityAccount } from '@/commands/types/account.types';
 
 interface AccountData {
     geminiProQuote?: number;
@@ -16,18 +17,8 @@ interface AccountData {
     userId?: string;
 }
 
-interface Account {
-    context: {
-        email: string;
-        plan_name: string;
-        plan?: {
-            tier_id: string;
-        };
-    };
-}
-
 interface AccountCardProps {
-    account: Account;
+    account: AntigravityAccount;
     data?: AccountData;
     isCurrent: boolean;
     onSwitch: (email: string) => void;
@@ -53,7 +44,10 @@ const maskEmail = (email: string): string => {
 
 export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurrent, onSwitch, privacyMode }) => {
     const { t } = useTranslation(['common', 'dashboard']);
-    const displayEmail = privacyMode ? maskEmail(account.context.email) : account.context.email;
+    const email = account.antigravityAuthStatus.email;
+    const displayEmail = privacyMode ? maskEmail(email) : email;
+    const planName = account.userStatus?.rawData?.plan_name;
+    const tierId = account.userStatus?.rawData?.plan?.tier_id;
 
     return (
         <div className={`card flex flex-col gap-2.5 ${isCurrent ? 'card-active' : ''}`}>
@@ -68,8 +62,8 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
                         />
                     )}
                     <div>
-                        <div className="font-bold">{account.context.plan_name || t('common:status.noName')}</div>
-                        <div className="text-xs opacity-70" title={account.context.email}>{displayEmail}</div>
+                        <div className="font-bold">{planName || t('common:status.noName')}</div>
+                        <div className="text-xs opacity-70" title={email}>{displayEmail}</div>
                     </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -78,12 +72,12 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account, data, isCurre
                             {t('common:status.current')}
                         </VSCodeTag>
                     )}
-                    <VSCodeTag>{account.context.plan?.tier_id || t('common:status.unknown')}</VSCodeTag>
+                    <VSCodeTag>{tierId || t('common:status.unknown')}</VSCodeTag>
                     {!isCurrent && (
                         <VSCodeButton
                             appearance="secondary"
                             className="h-6"
-                            onClick={() => onSwitch(account.context.email)}
+                            onClick={() => onSwitch(email)}
                         >
                             {t('common:actions.switch')}
                         </VSCodeButton>

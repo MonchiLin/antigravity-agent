@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import dayjs from 'dayjs';
 import { Logger } from '../utils/logger';
-import { AccountMetrics } from '@/commands/types/account.types';
+import { AccountMetrics, AntigravityAccount } from '@/commands/types/account.types';
 import { getQuotaCategory } from '../constants/model-mappings';
 import { TranslationManager } from './translation-manager';
 import { API_CONFIG } from '../constants/api';
@@ -9,19 +9,6 @@ import { API_CONFIG } from '../constants/api';
 // but standard import is better if file exists. 
 // However, since we just added the file, let's use standard import.
 import { maskEmail } from '../utils/string-masking';
-
-interface CurrentAccount {
-    context: {
-        email: string;
-        plan_name: string; // User Nickname
-        plan?: {
-            tier_id: string;
-            tier_name: string;
-            display_name: string;
-            slug: string;
-        };
-    };
-}
 
 /**
  * Manages the VS Code Status Bar item for Antigravity.
@@ -34,7 +21,7 @@ export class StatusBarManager {
     private static readonly API_BASE = API_CONFIG.BASE_URL;
 
     private static currentMetrics: AccountMetrics | null = null;
-    private static currentAccount: CurrentAccount | null = null;
+    private static currentAccount: AntigravityAccount | null = null;
     private static lastModelName: string = 'Gemini 3 Pro (High)'; // Default Model Name
     private static currentPollDuration: number = 30000;
     private static isMaskingEnabled: boolean = false;
@@ -167,6 +154,7 @@ export class StatusBarManager {
             // Connection successful - reset warning visual
             this.metricsItem.color = undefined;
             this.metricsItem.backgroundColor = undefined;
+            this.metricsItem.tooltip = undefined; // clear previous error tooltip
             this.userItem.color = undefined;
 
             // Switch back to normal polling (30s) if we were in fast recovery mode
@@ -177,10 +165,10 @@ export class StatusBarManager {
             }
 
             if (!accRes.ok) throw new Error('Failed to fetch account info');
-            const currentAccount = await accRes.json() as CurrentAccount | null;
+            const currentAccount = await accRes.json() as AntigravityAccount | null;
             this.currentAccount = currentAccount;
 
-            if (!currentAccount || !currentAccount.context?.email) {
+            if (!currentAccount || !currentAccount.antigravityAuthStatus?.email) {
                 this.metricsItem.text = `$(antigravity-logo) ${t('status.none')}`;
                 this.metricsItem.tooltip = t('status.noAccount');
 
@@ -189,7 +177,7 @@ export class StatusBarManager {
                 return;
             }
 
-            const email = currentAccount.context.email;
+            const email = currentAccount.antigravityAuthStatus.email;
 
             // 2. Get Metrics
             const metricRes = await fetch(`${this.API_BASE}/${API_CONFIG.ENDPOINTS.GET_METRICS}`, {
@@ -228,11 +216,11 @@ export class StatusBarManager {
     }
 
     // ... inside render method ...
-    private static render(metrics: AccountMetrics, currentAccount?: CurrentAccount) {
+    private static render(metrics: AccountMetrics, currentAccount?: AntigravityAccount) {
         if (!metrics) return;
 
         // --- Render User Item ---
-        let email = currentAccount?.context.email || '';
+        let email = currentAccount?.antigravityAuthStatus.email || '';
         if (this.isMaskingEnabled && email) {
             try {
                 email = maskEmail(email);
@@ -268,7 +256,7 @@ export class StatusBarManager {
      * Generates a rich Markdown tooltip for the metrics item.
      * Table Layout: Value precision and standard overview.
      */
-    private static renderTooltip(metrics: AccountMetrics, currentAccount: CurrentAccount | undefined, displayEmail: string): vscode.MarkdownString {
+    private static renderTooltip(metrics: AccountMetrics, currentAccount: AntigravityAccount | undefined, displayEmail: string): vscode.MarkdownString {
         const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
         const md = new vscode.MarkdownString();
         md.isTrusted = true;
@@ -280,16 +268,17 @@ export class StatusBarManager {
         }
 
         // 1. Header: User & Plan
-        // Use tier_id as the definitive plan identifier, as seen in AccountCard
-        let plan = currentAccount.context.plan?.tier_id || 'UNKNOWN';
+        // Use tier_id as the definitive plan identifier
+        // userStatus -> rawData -> plan -> tier_id
+        let plan = currentAccount.userStatus?.rawData?.plan?.tier_id || 'UNKNOWN';
 
         // Prettify if it looks like a slug (contains underscores or dashes)
         if (plan.includes('_') || plan.includes('-')) {
             plan = plan.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
-        // Use plan_name (Nickname) if available for better user identification
-        const nickname = currentAccount.context.plan_name;
+        // userStatus -> rawData -> plan_name (Nickname)
+        const nickname = currentAccount.userStatus?.rawData?.plan_name;
         const userDisplay = nickname ? `${nickname} (${displayEmail})` : displayEmail;
 
         md.appendMarkdown(`**${t('status.tooltip.account')}**: ${userDisplay} &nbsp;|&nbsp; **${t('status.tooltip.plan')}**: ${plan}\n\n`);
