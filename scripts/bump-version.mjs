@@ -5,6 +5,8 @@
  * - package-lock.json
  * - src-tauri/tauri.conf.json
  * - src-tauri/Cargo.toml
+ * - vscode-extension/package.json
+ * - vscode-extension/package-lock.json
  *
  * Branch rules:
  * - If on dev: fail if there are staged changes; otherwise checkout master and merge dev, then continue.
@@ -13,7 +15,7 @@
  *
  * Defensive rules:
  * - Refuses to run if working tree is dirty before starting.
- * - After edits, verifies only the four files changed.
+ * - After edits, verifies only the expected files changed.
  * - Aborts (no commit) if any other file changes.
  * - Fails if the tag already exists before creating it.
  * - Pushes branch and tag after committing.
@@ -32,6 +34,7 @@ const expectedFiles = [
   path.join("src-tauri", "tauri.conf.json"),
   path.join("src-tauri", "Cargo.toml"),
   path.join("vscode-extension", "package.json"),
+  path.join("vscode-extension", "package-lock.json"),
 ];
 
 function run(cmd, opts = {}) {
@@ -164,6 +167,16 @@ async function bumpVsCodeExtension(version) {
   await writeFile(file, JSON.stringify(pkg, null, 4) + "\n", "utf8");
 }
 
+async function bumpVsCodeExtensionLock(version) {
+  const file = path.join("vscode-extension", "package-lock.json");
+  const lock = JSON.parse(await readFile(file, "utf8"));
+  lock.version = version;
+  if (lock.packages && lock.packages[""]) {
+    lock.packages[""].version = version;
+  }
+  await writeFile(file, JSON.stringify(lock, null, 4) + "\n", "utf8");
+}
+
 function verifyOnlyExpectedChanged() {
   const diffNames = run("git diff --name-only");
   const changed = diffNames ? diffNames.split(/\r?\n/).filter(Boolean) : [];
@@ -231,6 +244,7 @@ async function main() {
   await bumpTauriConf(version);
   await bumpCargoToml(version);
   await bumpVsCodeExtension(version);
+  await bumpVsCodeExtensionLock(version);
 
   verifyOnlyExpectedChanged();
   ensureTagAvailable(version);
