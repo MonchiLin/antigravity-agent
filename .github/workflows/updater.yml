@@ -152,8 +152,15 @@ jobs:
           detect_file "*aarch64*.app.tar.gz" "darwin" "aarch64" "app"
           detect_file "*x86_64*.app.tar.gz" "darwin" "x86_64" "app"
           
-          # Linux updater bundle (prefer tarball if present)
-          detect_file "*amd64*.AppImage.tar.gz" "linux" "x86_64" "appimage" || detect_file "*amd64*.AppImage" "linux" "x86_64" "appimage"
+          # Linux updater bundle (optional)
+          # Prefer AppImage artifacts. If unavailable, fallback to .deb when signed.
+          if detect_file "*amd64*.AppImage.tar.gz" "linux" "x86_64" "appimage" || detect_file "*amd64*.AppImage" "linux" "x86_64" "appimage"; then
+            echo "✅ Linux updater artifact detected via AppImage"
+          elif detect_file "*_amd64.deb" "linux" "x86_64" "deb"; then
+            echo "⚠️ Linux AppImage not found, fallback to signed .deb artifact"
+          else
+            echo "⚠️ No Linux updater artifact found, linux-x86_64 will be omitted from latest.json"
+          fi
           
           echo ""
           echo "=== Detection Summary ==="
