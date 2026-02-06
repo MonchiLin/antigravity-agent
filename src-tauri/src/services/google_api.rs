@@ -12,6 +12,15 @@ pub struct UserInfoResponse {
     pub picture: String,
 }
 
+#[derive(Deserialize)]
+pub struct RefreshTokenResponse {
+    pub access_token: String,
+}
+
+const CLIENT_ID: &str = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com";
+const CLIENT_SECRET: &str = "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";
+const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
+
 pub struct ValidToken {
     pub access_token: String,
     pub user_id: String,
@@ -21,7 +30,7 @@ pub struct ValidToken {
 pub async fn load_account(
     config_dir: &std::path::Path,
     target_email: &str,
-) -> Result<(String, String), String> {
+) -> Result<(String, String, Option<String>), String> {
     let antigravity_dir = config_dir.join("antigravity-accounts");
     let path = antigravity_dir.join(format!("{}.json", target_email));
 
@@ -36,14 +45,17 @@ pub async fn load_account(
     let auth_status_json: Value = serde_json::from_str(auth_status_raw)
         .map_err(|e| format!("解析 antigravityAuthStatus 失败: {}", e))?;
 
-    let access_token = auth_status_json
-        .get("apiKey")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| "antigravityAuthStatus 缺少 apiKey".to_string())?
-        .to_string();
+    let oauth_token_raw = json
+        .get(crate::constants::database::OAUTH_TOKEN)
+        .and_then(|v| v.as_str());
 
+    // 1. 获取 Access Token (优先 OAuth, 回退 API Key)
+    let access_token = crate::utils::codec::extract_preferred_access_token(
+        oauth_token_raw,
+        &auth_status_json,
+    )?;
+
+    // 2. 获取 Email
     let email = auth_status_json
         .get("email")
         .and_then(|v| v.as_str())
@@ -52,7 +64,40 @@ pub async fn load_account(
         .ok_or_else(|| "antigravityAuthStatus 缺少 email".to_string())?
         .to_string();
 
-    Ok((email, access_token))
+    // 3. 提取 Refresh Token
+    let refresh_token = crate::utils::codec::extract_refresh_token(oauth_token_raw);
+
+    Ok((email, access_token, refresh_token))
+}
+
+pub async fn refresh_access_token(refresh_token: &str) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let params = [
+        ("client_id", CLIENT_ID),
+        ("client_secret", CLIENT_SECRET),
+        ("grant_type", "refresh_token"),
+        ("refresh_token", refresh_token),
+    ];
+
+    let res = client
+        .post(TOKEN_URL)
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| format!("刷新 Token 请求失败: {}", e))?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let text = res.text().await.unwrap_or_default();
+        return Err(format!("刷新 Token 失败 ({}): {}", status, text));
+    }
+
+    let json: RefreshTokenResponse = res
+        .json()
+        .await
+        .map_err(|e| format!("刷新 Token 响应解析失败: {}", e))?;
+
+    Ok(json.access_token)
 }
 
 pub async fn get_valid_token(email: &str, access_token: &str) -> Result<ValidToken, String> {

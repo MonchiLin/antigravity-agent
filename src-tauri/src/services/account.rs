@@ -1,13 +1,4 @@
-use base64::{
-    engine::general_purpose::{
-        STANDARD as BASE64_STANDARD, STANDARD_NO_PAD as BASE64_STANDARD_NO_PAD,
-        URL_SAFE as BASE64_URL_SAFE, URL_SAFE_NO_PAD as BASE64_URL_SAFE_NO_PAD,
-    },
-    Engine as _,
-};
-mod user_context_view;
-use self::user_context_view::user_context_to_json;
-use prost::Message;
+use crate::utils::codec::{decode_oauth_token, decode_user_status};
 use rusqlite::{Connection, OptionalExtension};
 use serde_json::{from_str, Value};
 use std::fs;
@@ -18,64 +9,6 @@ fn query_item_value(conn: &Connection, key: &str) -> Result<Option<String>, Stri
     })
     .optional()
     .map_err(|e| format!("查询 {} 失败: {}", key, e))
-}
-
-fn decode_base64(raw: &str, field_name: &str) -> Result<Vec<u8>, String> {
-    BASE64_STANDARD
-        .decode(raw)
-        .or_else(|_| BASE64_STANDARD_NO_PAD.decode(raw))
-        .or_else(|_| BASE64_URL_SAFE.decode(raw))
-        .or_else(|_| BASE64_URL_SAFE_NO_PAD.decode(raw))
-        .map_err(|e| format!("{} Base64 解码失败: {}", field_name, e))
-}
-
-fn decode_oauth_token(raw: &str) -> Result<Value, String> {
-    let wrapper_bytes = decode_base64(raw, crate::constants::database::OAUTH_TOKEN)?;
-    let wrapper = crate::proto::state_sync::OAuthTokenWrapper::decode(wrapper_bytes.as_slice())
-        .map_err(|e| format!("oauthToken Wrapper Proto 解码失败: {}", e))?;
-
-    let inner = wrapper
-        .inner
-        .ok_or_else(|| "oauthToken 缺少 inner".to_string())?;
-    let data = inner
-        .data
-        .ok_or_else(|| "oauthToken 缺少 data".to_string())?;
-
-    let oauth_info_bytes =
-        decode_base64(&data.oauth_info_base64, "oauthToken.data.oauth_info_base64")?;
-    let oauth_info = crate::proto::state_sync::OAuthInfo::decode(oauth_info_bytes.as_slice())
-        .map_err(|e| format!("oauthToken OAuthInfo Proto 解码失败: {}", e))?;
-
-    Ok(serde_json::json!({
-        "sentinelKey": inner.sentinel_key,
-        "accessToken": oauth_info.access_token,
-        "refreshToken": oauth_info.refresh_token,
-        "tokenType": oauth_info.token_type,
-        "expirySeconds": oauth_info.expiry.map(|t| t.seconds),
-    }))
-}
-
-fn decode_user_status(raw: &str) -> Result<Value, String> {
-    let wrapper_bytes = decode_base64(raw, crate::constants::database::USER_STATUS)?;
-    let wrapper = crate::proto::state_sync::UserStatusWrapper::decode(wrapper_bytes.as_slice())
-        .map_err(|e| format!("userStatus Wrapper Proto 解码失败: {}", e))?;
-
-    let inner = wrapper
-        .inner
-        .ok_or_else(|| "userStatus 缺少 inner".to_string())?;
-    let data = inner
-        .data
-        .ok_or_else(|| "userStatus 缺少 data".to_string())?;
-
-    let raw_data_bytes = decode_base64(&data.raw_data, "userStatus.data.raw_data")?;
-    let context = crate::proto::state_sync::UserContext::decode(raw_data_bytes.as_slice())
-        .map_err(|e| format!("userStatus raw_data UserContext Proto 解码失败: {}", e))?;
-
-    Ok(serde_json::json!({
-        "sentinelKey": inner.sentinel_key,
-        "rawDataType": "proto",
-        "rawData": user_context_to_json(context),
-    }))
 }
 
 #[derive(serde::Serialize)]
@@ -507,6 +440,49 @@ pub struct TriggerResult {
     pub message: String,
 }
 
+async fn ensure_valid_token_with_refresh(
+    email: &str,
+    access_token: &str,
+    refresh_token: Option<&str>,
+) -> Result<(crate::services::google_api::ValidToken, String), String> {
+    use crate::services::google_api;
+
+    // 第一次尝试
+    match google_api::get_valid_token(email, access_token).await {
+        Ok(info) => Ok((info, access_token.to_string())),
+        Err(e) => {
+            // 检查是否为 401 错误 (根据 google_api.rs 里的错误信息格式，可能包含 "Status: 401" 或类似的)
+            // 这里我们做一个宽泛的字符串匹配
+            let is_401 = e.contains("401") || e.contains("Unauthorized");
+
+            if is_401 {
+                if let Some(rt) = refresh_token {
+                    // Token 过期，尝试刷新
+                    match google_api::refresh_access_token(rt).await {
+                        Ok(new_access_token) => {
+                            // 使用新 Token 重试
+                            match google_api::get_valid_token(email, &new_access_token).await {
+                                Ok(info) => Ok((info, new_access_token)),
+                                Err(retry_e) => Err(format!(
+                                    "刷新 Token 成功但重试验证失败: {}",
+                                    retry_e
+                                )),
+                            }
+                        }
+                        Err(refresh_e) => {
+                            Err(format!("Token 过期且刷新失败: {}", refresh_e))
+                        }
+                    }
+                } else {
+                    Err(format!("Token 过期 (401) 且无 Refresh Token 可用. 原错误: {}", e))
+                }
+            } else {
+                Err(e)
+            }
+        }
+    }
+}
+
 pub async fn get_metrics(
     config_dir: &std::path::Path,
     email: String,
@@ -514,15 +490,17 @@ pub async fn get_metrics(
     use crate::services::google_api;
 
     // 1. Load Account & Token
-    let (email, access_token) = google_api::load_account(config_dir, &email).await?;
-    let token_info = google_api::get_valid_token(&email, &access_token).await?;
+    let (email, access_token, refresh_token) = google_api::load_account(config_dir, &email).await?;
+    
+    let (token_info, final_access_token) = ensure_valid_token_with_refresh(&email, &access_token, refresh_token.as_deref()).await?;
 
     // 2. Fetch Models
-    let project = google_api::fetch_code_assist_project(&token_info.access_token)
+    // 注意：使用 final_access_token (可能是刷新后的)
+    let project = google_api::fetch_code_assist_project(&final_access_token)
         .await
         .map_err(|e| format!("获取项目 ID 失败: {}", e))?;
 
-    let models_json = google_api::fetch_available_models(&token_info.access_token, &project)
+    let models_json = google_api::fetch_available_models(&final_access_token, &project)
         .await
         .map_err(|e| format!("获取模型列表失败: {}", e))?;
 
@@ -547,14 +525,15 @@ pub async fn trigger_quota_refresh(
     info!("🚀 Check Quota & Trigger Refresh for: {}", email);
 
     // 1. Load Account & Token
-    let (email_str, access_token) = google_api::load_account(config_dir, &email).await?;
-    let token_info = match google_api::get_valid_token(&email_str, &access_token).await {
-        Ok(t) => t,
+    let (email_str, access_token, refresh_token) = google_api::load_account(config_dir, &email).await?;
+    let (token_info, final_access_token) = match ensure_valid_token_with_refresh(&email_str, &access_token, refresh_token.as_deref()).await {
+        Ok(res) => res,
         Err(e) => return Err(format!("Auth failed: {}", e)),
     };
 
     // 2. Get Project ID
-    let project = match google_api::fetch_code_assist_project(&token_info.access_token).await {
+    // 同样使用 final_access_token
+    let project = match google_api::fetch_code_assist_project(&final_access_token).await {
         Ok(p) => p,
         Err(e) => {
             return Ok(TriggerResult {
@@ -571,7 +550,7 @@ pub async fn trigger_quota_refresh(
 
     // 3. Get Available Models & Quotas
     let models_json =
-        google_api::fetch_available_models(&token_info.access_token, &project).await?;
+        google_api::fetch_available_models(&final_access_token, &project).await?;
     let quotas = parse_quotas(&models_json);
 
     let mut triggered = Vec::new();

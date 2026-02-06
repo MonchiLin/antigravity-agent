@@ -181,7 +181,7 @@ impl From<crate::proto::state_sync::Subscription> for SubscriptionView {
     }
 }
 
-pub(super) fn user_context_to_json(context: crate::proto::state_sync::UserContext) -> Value {
+pub fn user_context_to_json(context: crate::proto::state_sync::UserContext) -> Value {
     serde_json::to_value(UserContextView::from(context)).unwrap_or_else(|e| {
         tracing::error!(error = %e, "UserContext JSON 序列化失败");
         Value::Null
