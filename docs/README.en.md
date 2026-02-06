@@ -1,5 +1,5 @@
 > [!CAUTION]
-> For Antigravity 1.16.5, support has been launched in the test version, [download address](https://github.com/MonchiLin/antigravity-agent/releases/tag/autobuild). Please see [Version Note](Antigravity_1_5_6.md) for related changes.
+> Support for Antigravity 1.16.5 is now available in the latest stable release, [download address](https://github.com/MonchiLin/antigravity-agent/releases). Please see [Version Note](Antigravity_1_5_6.md) for related changes.
 
 <div align="center">
 

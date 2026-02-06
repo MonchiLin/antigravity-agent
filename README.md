@@ -1,5 +1,5 @@
 > [!CAUTION]
-> 对于 Antigravity 1.16.5 支持已于测试版中上线，[下载地址](https://github.com/MonchiLin/antigravity-agent/releases/tag/autobuild)。相关变更请查看 [版本说明](docs/Antigravity_1_5_6.md)。
+> 对于 Antigravity 1.16.5 支持已于测试版中上线，[下载地址](https://github.com/MonchiLin/antigravity-agent/releases)。相关变更请查看 [版本说明](docs/Antigravity_1_5_6.md)。
 
 <div align="center">
 
