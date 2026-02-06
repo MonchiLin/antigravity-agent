@@ -1,6 +1,6 @@
 [package]
 name = "antigravity-agent"
-version = "1.6.1"
+version = "1.7.0"
 description = "Antigravity Agent - Account management tool"
 authors = ["Kiki"]
 edition = "2021"
