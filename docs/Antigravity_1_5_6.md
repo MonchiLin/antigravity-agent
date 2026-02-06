@@ -1,4 +1,4 @@
-# Antigravity Agent 1.5.6 版本说明
+# Antigravity 1.5.6 版本说明
 
 ## ⚠️ 重要变更：鉴权凭证结构升级
 
@@ -19,7 +19,7 @@
 
 ---
 
-# Antigravity Agent 1.5.6 Version Note
+# Antigravity 1.5.6 Version Note
 
 ## ⚠️ Important Change: Credential Structure Upgrade
 
