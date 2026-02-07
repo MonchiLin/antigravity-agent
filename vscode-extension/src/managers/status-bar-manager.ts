@@ -26,6 +26,8 @@ export class StatusBarManager {
     private static currentPollDuration: number = 30000;
     private static isMaskingEnabled: boolean = false;
     private static isShowAccountEnabled: boolean = true;
+    private static isUpdating: boolean = false;
+    private static pendingUpdate: boolean = false;
 
     /**
      * Initializes the status bar manager.
@@ -79,8 +81,16 @@ export class StatusBarManager {
         if (this.currentMetrics && this.currentAccount) {
             this.render(this.currentMetrics, this.currentAccount);
         } else {
-            this.update();
+            this.requestUpdate();
         }
+    }
+
+    private static requestUpdate() {
+        if (this.isUpdating) {
+            this.pendingUpdate = true;
+            return;
+        }
+        void this.update();
     }
 
     /**
@@ -110,12 +120,13 @@ export class StatusBarManager {
         }
     }
 
-    private static startPolling(intervalMs: number = 30000) {
+    private static startPolling(intervalMs: number = 30000, triggerImmediate: boolean = true) {
         this.stopPolling();
-        // Initial fetch
-        this.update();
+        if (triggerImmediate) {
+            this.requestUpdate();
+        }
         // Poll
-        this.interval = setInterval(() => this.update(), intervalMs);
+        this.interval = setInterval(() => this.requestUpdate(), intervalMs);
     }
 
     private static stopPolling() {
@@ -138,7 +149,7 @@ export class StatusBarManager {
             this.render(this.currentMetrics);
         } else {
             // Otherwise force a fetch
-            await this.update();
+            this.requestUpdate();
         }
     }
 
@@ -146,6 +157,12 @@ export class StatusBarManager {
      * Fetches the latest account info and metrics from the local API.
      */
     public static async update() {
+        if (this.isUpdating) {
+            this.pendingUpdate = true;
+            return;
+        }
+
+        this.isUpdating = true;
         const t = TranslationManager.getInstance().t.bind(TranslationManager.getInstance());
         try {
             // 1. Get Current Account
@@ -157,16 +174,15 @@ export class StatusBarManager {
             this.metricsItem.tooltip = undefined; // clear previous error tooltip
             this.userItem.color = undefined;
 
-            // Switch back to normal polling (30s) if we were in fast recovery mode
-            if (this.currentPollDuration !== 30000) {
-                this.currentPollDuration = 30000;
-                this.startPolling(30000);
-                return; // startPolling calls update() immediately
-            }
-
             if (!accRes.ok) throw new Error('Failed to fetch account info');
             const currentAccount = await accRes.json() as AntigravityAccount | null;
             this.currentAccount = currentAccount;
+
+            // Switch back to normal polling (30s) only after a successful response.
+            if (this.currentPollDuration !== 30000) {
+                this.currentPollDuration = 30000;
+                this.startPolling(30000, false);
+            }
 
             if (!currentAccount || !currentAccount.antigravity_auth_status?.email) {
                 this.metricsItem.text = `$(antigravity-logo) ${t('status.none')}`;
@@ -210,7 +226,13 @@ export class StatusBarManager {
             // Switch to fast polling (5s) for quick recovery detection
             if (this.currentPollDuration !== 5000) {
                 this.currentPollDuration = 5000;
-                this.startPolling(5000);
+                this.startPolling(5000, false);
+            }
+        } finally {
+            this.isUpdating = false;
+            if (this.pendingUpdate) {
+                this.pendingUpdate = false;
+                this.requestUpdate();
             }
         }
     }
