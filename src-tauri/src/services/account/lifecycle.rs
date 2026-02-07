@@ -19,6 +19,8 @@ fn parse_account_response(
     let oauth_token = fields
         .oauth_token
         .as_deref()
+        .map(str::trim)
+        .filter(|raw| !raw.is_empty())
         .map(decode_oauth_token_to_struct)
         .transpose()
         .map_err(|e| format!("Failed to decode oauth token for {context}: {e}"))?;
@@ -26,6 +28,8 @@ fn parse_account_response(
     let user_status = fields
         .user_status
         .as_deref()
+        .map(str::trim)
+        .filter(|raw| !raw.is_empty())
         .map(decode_user_status_to_struct)
         .transpose()
         .map_err(|e| format!("Failed to decode user status for {context}: {e}"))?;
