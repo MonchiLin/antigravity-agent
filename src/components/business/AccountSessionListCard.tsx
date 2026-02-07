@@ -324,7 +324,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
               </span>
             </div>
           }>
-            <TriangleAlert className="w-4 h-4 text-amber-500/80 hover:text-amber-600 transition-colors cursor-help" />
+            <TriangleAlert className="w-5 h-5 text-red-500 hover:text-red-600 transition-colors cursor-help" />
           </Tooltip>
         </div>
       )}
