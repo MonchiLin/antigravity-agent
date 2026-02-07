@@ -2,7 +2,7 @@
     "name": "antigravity-agent",
     "displayName": "Antigravity Agent",
     "description": "Manage your Antigravity accounts directly from VS Code",
-    "version": "1.7.1",
+    "version": "1.7.2",
     "icon": "images/icon.png",
     "type": "module",
     "publisher": "MonchiLin",
